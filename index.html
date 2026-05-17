@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="https://i.imgur.com/T2e867w.png" />
+    <link rel="apple-touch-icon" href="https://i.imgur.com/T2e867w.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Olympe — Serveur Discord univers grec antique" />
+    <meta name="theme-color" content="#0A0812" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Olympe" />
+    <meta property="og:title" content="Olympe" />
+    <meta property="og:description" content="Serveur Discord • Univers grec antique • Dieux & Légendes" />
+    <title>Olympe</title>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "7fe9f795-dc4c-488f-a00f-0cd53ec21d39",
+          notifyButton: { enable: false },
+          allowLocalhostAsSecureOrigin: true,
+        });
+      });
+    </script>
+    <link rel="manifest" href="/manifest.json" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
