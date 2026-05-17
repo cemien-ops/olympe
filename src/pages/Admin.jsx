@@ -129,7 +129,8 @@ export default function Admin() {
   const [editPerms,       setEditPerms]       = useState([]);
   const [editAbo,         setEditAbo]         = useState("");
   const [editWL,          setEditWL]          = useState([]);
-  const [editParrain,     setEditParrain]     = useState("");
+  const [editParrainList, setEditParrainList] = useState([]);
+  const [parrainSearch,   setParrainSearch]   = useState("");
   const [editPseudo,      setEditPseudo]      = useState("");
   const [editCustomId,    setEditCustomId]    = useState("");
   const [editPassword,    setEditPassword]    = useState("");
@@ -188,7 +189,8 @@ export default function Admin() {
     setEditPerms(u.perms || []);
     setEditAbo(u.abonnement || "");
     setEditWL(u.whitelist || []);
-    setEditParrain(Array.isArray(u.parrain) ? u.parrain.join(", ") : (u.parrain || ""));
+    setEditParrainList(Array.isArray(u.parrain) ? u.parrain : u.parrain ? [u.parrain] : []);
+    setParrainSearch("");
     setEditPseudo(u.pseudo || "");
     setEditCustomId(u.customId || "");
     setEditPassword("");
@@ -206,10 +208,7 @@ export default function Admin() {
   };
 
   const handleSaveEdit = async () => {
-    const isGerant = user?.pseudo === "Zeus" || user?.pseudo === "Cronos";
-    const parrainArray = isGerant
-      ? editParrain.split(",").map(s => s.trim()).filter(Boolean)
-      : editUser.parrain;
+    const parrainArray = user?.id === "zeus-001" ? editParrainList : editUser.parrain;
     const finalAvatar = editAvatarMode === "emoji" ? (editAvatarEmoji || "⚡")
                       : editAvatarMode === "url"   ? editAvatarUrl
                       : editAvatarData || editUser.avatar;
@@ -584,18 +583,62 @@ export default function Admin() {
               selectedWL={editWL}       setSelectedWL={setEditWL}
             />
 
-            {(user?.pseudo === "Zeus" || user?.pseudo === "Cronos") && (
+            {user?.id === "zeus-001" && editUser?.id !== "zeus-001" && (
               <div className="edit-section">
                 <label className="role-assign-title">🤝 PARRAIN(S)</label>
+
+                {/* Current parrains as removable tags */}
+                {editParrainList.length > 0 && (
+                  <div className="parrain-tags">
+                    {editParrainList.map(p => (
+                      <span key={p} className="parrain-tag">
+                        {p}
+                        <button
+                          type="button"
+                          className="parrain-tag-remove"
+                          onClick={() => setEditParrainList(prev => prev.filter(x => x !== p))}
+                        >✕</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Search + add */}
                 <input
                   className="mh-input"
-                  placeholder="ex: Zeus, Athena, #0042"
-                  value={editParrain}
-                  onChange={e => setEditParrain(e.target.value)}
+                  placeholder="Chercher un membre à ajouter…"
+                  value={parrainSearch}
+                  onChange={e => setParrainSearch(e.target.value)}
                 />
-                <p style={{ fontSize: "0.72rem", color: "#7A6A50", marginTop: "4px" }}>
-                  Pseudo(s) ou ID(s) séparés par des virgules.
-                </p>
+                {parrainSearch.trim() && (
+                  <div className="parrain-dropdown">
+                    {users
+                      .filter(u =>
+                        u.id !== editUser?.id &&
+                        !editParrainList.includes(u.pseudo) &&
+                        u.pseudo.toLowerCase().includes(parrainSearch.toLowerCase())
+                      )
+                      .slice(0, 6)
+                      .map(u => (
+                        <div
+                          key={u.id}
+                          className="parrain-option"
+                          onClick={() => {
+                            setEditParrainList(prev => [...prev, u.pseudo]);
+                            setParrainSearch("");
+                          }}
+                        >
+                          {u.pseudo}
+                          <span className="parrain-option-tier">
+                            {u.perms?.includes("Gérant") ? "Gérant" : u.perms?.includes("Diplomate") ? "Diplomate" : u.perms?.includes("Ambassadeur") ? "Ambassadeur" : "Membre"}
+                          </span>
+                        </div>
+                      ))}
+                    {users.filter(u => u.id !== editUser?.id && !editParrainList.includes(u.pseudo) && u.pseudo.toLowerCase().includes(parrainSearch.toLowerCase())).length === 0 && (
+                      <div style={{ padding: "0.5rem", color: "#7A6A50", fontSize: "0.8rem" }}>Aucun résultat</div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

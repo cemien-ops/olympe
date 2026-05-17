@@ -2435,6 +2435,32 @@ a { text-decoration: none; color: inherit; }
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 0.5rem; min-height: 60px;
 }
+.parrain-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.25rem; }
+.parrain-tag {
+  display: flex; align-items: center; gap: 0.35rem;
+  background: rgba(201,162,39,0.12); border: 1px solid rgba(201,162,39,0.35);
+  color: #F0D878; font-size: 0.8rem; padding: 0.22rem 0.6rem;
+  border-radius: 20px; font-family: 'Cinzel', serif;
+}
+.parrain-tag-remove {
+  background: none; border: none; color: rgba(201,162,39,0.6);
+  cursor: pointer; font-size: 0.7rem; padding: 0; line-height: 1;
+}
+.parrain-tag-remove:hover { color: #e07070; }
+
+.parrain-dropdown {
+  background: rgba(10,8,18,0.98); border: 1px solid rgba(201,162,39,0.25);
+  border-radius: 8px; overflow: hidden; margin-top: -0.3rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.parrain-option {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.55rem 0.9rem; cursor: pointer; font-size: 0.85rem; color: #E8D9B0;
+  transition: background 0.15s;
+}
+.parrain-option:hover { background: rgba(201,162,39,0.1); }
+.parrain-option-tier { font-size: 0.72rem; color: #7A6A50; }
+
 .edit-section {
   display: flex; flex-direction: column; gap: 0.5rem;
   margin-bottom: 1rem;
