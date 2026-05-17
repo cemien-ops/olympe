@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { sendNotification } from "../onesignal";
@@ -26,26 +26,29 @@ function renderAvatar(avatar, size = "2.5rem") {
 }
 
 export default function Messages() {
-  const { user, users, getMessages, sendMessage, markAllRead, markEverythingRead } = useAuth();
+  const {
+    user, users,
+    getMessages, sendMessage, sendGroupMessage,
+    createGroupConv, addUserToGroup,
+    saveGroupNameDB, deleteConversationDB,
+    markAllRead, markEverythingRead, markGroupRead,
+  } = useAuth();
   const navigate = useNavigate();
-  const [selectedConv, setSelectedConv] = useState(null);
-  const [input, setInput] = useState("");
-  const [attachments, setAttachments] = useState([]);
-  const [allMsgs, setAllMsgs] = useState([]);
-  const [paymentOpen, setPaymentOpen] = useState(false);
-  const [copied, setCopied] = useState("");
-  const [editingGroupName, setEditingGroupName] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
-  const [showNewConv, setShowNewConv] = useState(false);
-  const [searchUser, setSearchUser] = useState("");
-  // Group creation
-  const [newConvMode, setNewConvMode] = useState("dm");
+  const [selectedConv,       setSelectedConv]       = useState(null);
+  const [input,              setInput]              = useState("");
+  const [attachments,        setAttachments]        = useState([]);
+  const [allMsgs,            setAllMsgs]            = useState([]);
+  const [paymentOpen,        setPaymentOpen]        = useState(false);
+  const [copied,             setCopied]             = useState("");
+  const [editingGroupName,   setEditingGroupName]   = useState(false);
+  const [newGroupName,       setNewGroupName]       = useState("");
+  const [showNewConv,        setShowNewConv]        = useState(false);
+  const [searchUser,         setSearchUser]         = useState("");
+  const [newConvMode,        setNewConvMode]        = useState("dm");
   const [selectedGroupUsers, setSelectedGroupUsers] = useState([]);
-  // Add to group
-  const [showAddToGroup, setShowAddToGroup] = useState(false);
-  const [addGroupSearch, setAddGroupSearch] = useState("");
-  // Discount menu
-  const [discountOpen, setDiscountOpen] = useState(false);
+  const [showAddToGroup,     setShowAddToGroup]     = useState(false);
+  const [addGroupSearch,     setAddGroupSearch]     = useState("");
+  const [discountOpen,       setDiscountOpen]       = useState(false);
   const discountRef = useRef(null);
   const [confirmPending, setConfirmPending] = useState(null);
 
@@ -53,39 +56,21 @@ export default function Messages() {
     if (!user) { navigate("/auth"); return; }
   }, [user]);
 
+  // Refresh allMsgs whenever getMessages changes (i.e., whenever msgs or user state changes)
   useEffect(() => {
-    const refresh = () => setAllMsgs(getMessages());
-    refresh();
-    const interval = setInterval(refresh, 2000);
-    return () => clearInterval(interval);
-  }, [user]);
+    setAllMsgs(getMessages());
+  }, [getMessages]);
 
+  // Mark conversation as read when selected
   useEffect(() => {
     if (!selectedConv) return;
-    const allUsers = JSON.parse(localStorage.getItem("mh_users") || "[]");
     if (selectedConv.isGroup) {
-      const updatedUsers = allUsers.map(u =>
-        u.id === user.id
-          ? { ...u, messages: (u.messages || []).map(m =>
-              m.groupId === selectedConv.groupId && m.fromId !== user.id ? { ...m, read: true } : m
-            )}
-          : u
-      );
-      localStorage.setItem("mh_users", JSON.stringify(updatedUsers));
+      markGroupRead(selectedConv.groupId);
     } else {
-      const updatedUsers = allUsers.map(u =>
-        u.id === user.id
-          ? { ...u, messages: (u.messages || []).map(m =>
-              m.fromId === selectedConv.otherId ? { ...m, read: true } : m
-            )}
-          : u
-      );
-      localStorage.setItem("mh_users", JSON.stringify(updatedUsers));
+      markAllRead(selectedConv.otherId);
     }
-    setAllMsgs(getMessages());
-  }, [selectedConv]);
+  }, [selectedConv?.id]);
 
-  // Close discount menu on outside click
   useEffect(() => {
     const handler = (e) => {
       if (discountRef.current && !discountRef.current.contains(e.target)) setDiscountOpen(false);
@@ -96,8 +81,7 @@ export default function Messages() {
 
   if (!user) return null;
 
-  const allStoredUsers = JSON.parse(localStorage.getItem("mh_users") || "[]");
-  const availableUsers = allStoredUsers.filter(u => {
+  const availableUsers = users.filter(u => {
     if (u.id === user.id) return false;
     if (user.pseudo === "Zeus" || user.pseudo === "Cronos") return true;
     if (u.pseudo === "Zeus" || u.pseudo === "Cronos") return true;
@@ -128,91 +112,49 @@ export default function Messages() {
     );
   };
 
-  const createGroup = () => {
+  const createGroup = async () => {
     if (selectedGroupUsers.length < 1) return;
-    const groupId = `group-${Date.now()}`;
-    const participants = [user, ...selectedGroupUsers];
-    const participantIds = participants.map(u => u.id);
-    const participantPseudos = participants.map(u => u.pseudo);
-    const allUsers = JSON.parse(localStorage.getItem("mh_users") || "[]");
-    const groupMsg = {
-      id: `msg-${Date.now()}`, fromId: user.id, fromPseudo: user.pseudo,
-      content: `Groupe créé par ${user.pseudo}`,
-      attachments: [], date: new Date().toISOString(), read: false,
-      isGroup: true, groupId, participantIds, participantPseudos, groupName: null,
-    };
-    const updatedUsers = allUsers.map(u => {
-      if (!participantIds.includes(u.id)) return u;
-      return { ...u, messages: [...(u.messages || []), { ...groupMsg, read: u.id === user.id }] };
-    });
-    localStorage.setItem("mh_users", JSON.stringify(updatedUsers));
-    setSelectedConv({ id: groupId, isGroup: true, groupId, participantIds, participantPseudos, groupName: null, lastMsg: null, unread: 0 });
+    const result = await createGroupConv(selectedGroupUsers);
+    if (result) {
+      setSelectedConv({
+        id: result.groupId, isGroup: true,
+        groupId: result.groupId,
+        participantIds: result.participantIds,
+        participantPseudos: result.participantPseudos,
+        groupName: null, lastMsg: null, unread: 0,
+      });
+    }
     setShowNewConv(false);
     setSelectedGroupUsers([]);
     setNewConvMode("dm");
     setSearchUser("");
-    setTimeout(() => setAllMsgs(getMessages()), 100);
   };
 
-  const addToGroup = (newU) => {
+  const addToGroup = async (newU) => {
     const { groupId, participantIds, participantPseudos } = selectedConv;
     if (participantIds.includes(newU.id)) return;
-    const newIds = [...participantIds, newU.id];
-    const newPseudos = [...participantPseudos, newU.pseudo];
-    const allUsers = JSON.parse(localStorage.getItem("mh_users") || "[]");
-    const seen = new Set();
-    const groupMsgs = [];
-    allUsers.forEach(u => (u.messages || []).forEach(m => {
-      if (m.groupId === groupId && !seen.has(m.id)) { seen.add(m.id); groupMsgs.push(m); }
-    }));
-    let updatedUsers = allUsers.map(u => {
-      if (u.id === newU.id)
-        return { ...u, messages: [...(u.messages || []), ...groupMsgs.map(m => ({ ...m, participantIds: newIds, participantPseudos: newPseudos, read: true }))] };
-      if (participantIds.includes(u.id))
-        return { ...u, messages: (u.messages || []).map(m => m.groupId === groupId ? { ...m, participantIds: newIds, participantPseudos: newPseudos } : m) };
-      return u;
-    });
-    const sysMsg = {
-      id: `msg-${Date.now()}`, fromId: "system", fromPseudo: "Système",
-      content: `${newU.pseudo} a rejoint le groupe`,
-      attachments: [], date: new Date().toISOString(), read: false,
-      isGroup: true, groupId, participantIds: newIds, participantPseudos: newPseudos, groupName: selectedConv.groupName || null,
-    };
-    updatedUsers = updatedUsers.map(u => {
-      if (!newIds.includes(u.id)) return u;
-      return { ...u, messages: [...(u.messages || []), { ...sysMsg, read: u.id === user.id }] };
-    });
-    localStorage.setItem("mh_users", JSON.stringify(updatedUsers));
-    setSelectedConv(prev => ({ ...prev, participantIds: newIds, participantPseudos: newPseudos }));
+    const result = await addUserToGroup(groupId, newU, participantIds, participantPseudos);
+    if (result) {
+      setSelectedConv(prev => ({
+        ...prev,
+        participantIds: result.participantIds,
+        participantPseudos: result.participantPseudos,
+      }));
+    }
     setShowAddToGroup(false);
     setAddGroupSearch("");
-    setTimeout(() => setAllMsgs(getMessages()), 100);
   };
 
   const deleteConversation = () => {
     if (!selectedConv) return;
-    setConfirmPending(() => () => {
-      const allUsers = JSON.parse(localStorage.getItem("mh_users") || "[]");
-      const MSGS_KEY = "mh_messages";
-      const allGlobal = JSON.parse(localStorage.getItem(MSGS_KEY) || "[]");
-      if (selectedConv.isGroup) {
-        const gid = selectedConv.groupId;
-        localStorage.setItem(MSGS_KEY, JSON.stringify(allGlobal.filter(m => m.groupId !== gid)));
-        const updated = allUsers.map(u => ({ ...u, messages: (u.messages || []).filter(m => m.groupId !== gid) }));
-        localStorage.setItem("mh_users", JSON.stringify(updated));
-      } else {
-        const oid = selectedConv.otherId;
-        const keep = m => !((m.fromId === user.id && m.toId === oid) || (m.fromId === oid && m.toId === user.id));
-        localStorage.setItem(MSGS_KEY, JSON.stringify(allGlobal.filter(keep)));
-        const updated = allUsers.map(u => ({ ...u, messages: (u.messages || []).filter(keep) }));
-        localStorage.setItem("mh_users", JSON.stringify(updated));
-      }
+    setConfirmPending(() => async () => {
+      await deleteConversationDB(selectedConv);
       setSelectedConv(null);
       setConfirmPending(null);
-      setTimeout(() => setAllMsgs(getMessages()), 100);
     });
   };
 
+  // Build conversation list from messages
   const convMap = {};
   allMsgs.forEach(msg => {
     if (msg.isGroup && msg.groupId) {
@@ -226,13 +168,13 @@ export default function Messages() {
       }
       if (msg.groupName) convMap[msg.groupId].groupName = msg.groupName;
       convMap[msg.groupId].lastMsg = msg;
-      if (!msg.read && msg.toId === user.id) convMap[msg.groupId].unread++;
+      if (!msg.readBy?.includes(user.id) && msg.fromId !== user.id) convMap[msg.groupId].unread++;
     } else {
       const otherId = msg.fromId === user.id ? msg.toId : msg.fromId;
       if (!otherId) return;
       const convKey = `dm-${otherId}`;
       if (!convMap[convKey]) {
-        const contactUser = allStoredUsers.find(u => u.id === otherId) || { id: otherId, pseudo: otherId === "system" ? "Système" : otherId, avatar: "⚙️" };
+        const contactUser = users.find(u => u.id === otherId) || { id: otherId, pseudo: otherId === "system" ? "Système" : otherId, avatar: "⚙️" };
         convMap[convKey] = { id: convKey, isGroup: false, otherId, pseudo: contactUser.pseudo, avatar: contactUser.avatar, lastMsg: null, unread: 0 };
       }
       convMap[convKey].lastMsg = msg;
@@ -244,7 +186,7 @@ export default function Messages() {
     if (user.pseudo === "Zeus" || user.pseudo === "Cronos") return true;
     if (conv.isGroup) return true;
     if (conv.otherId === "system") return true;
-    const otherUser = allStoredUsers.find(u => u.id === conv.otherId);
+    const otherUser = users.find(u => u.id === conv.otherId);
     if (!otherUser) return true;
     if (otherUser.pseudo === "Zeus" || otherUser.pseudo === "Cronos") return true;
     return otherUser.faction === user.faction;
@@ -281,12 +223,9 @@ export default function Messages() {
     });
   };
 
-  const saveGroupName = () => {
+  const saveGroupName = async () => {
     if (!newGroupName.trim()) return;
-    const msgs = JSON.parse(localStorage.getItem("mh_messages") || "[]");
-    const updated = msgs.map(m => m.groupId === selectedConv.groupId ? { ...m, groupName: newGroupName.trim() } : m);
-    localStorage.setItem("mh_messages", JSON.stringify(updated));
-    setAllMsgs(getMessages());
+    await saveGroupNameDB(selectedConv.groupId, newGroupName.trim());
     setSelectedConv(prev => ({ ...prev, groupName: newGroupName.trim() }));
     setEditingGroupName(false);
   };
@@ -307,29 +246,18 @@ export default function Messages() {
 
   const sendDirect = async (content) => {
     if (!selectedConv || isDisabled) return;
-    const msgId = `msg-${Date.now()}`;
-    const date = new Date().toISOString();
-    const allUsers = JSON.parse(localStorage.getItem("mh_users") || "[]");
     if (selectedConv.isGroup) {
-      const { groupId, participantIds, participantPseudos } = selectedConv;
-      const groupMsg = { id: msgId, fromId: user.id, fromPseudo: user.pseudo, content, attachments: [], date, read: false, isGroup: true, groupId, participantIds, participantPseudos, groupName: selectedConv.groupName || null };
-      const updatedUsers = allUsers.map(u => !participantIds?.includes(u.id) ? u : { ...u, messages: [...(u.messages || []), { ...groupMsg, read: u.id === user.id }] });
-      localStorage.setItem("mh_users", JSON.stringify(updatedUsers));
-    } else {
-      const recipient = allUsers.find(u => u.id === selectedConv.otherId);
-      if (!recipient) return;
-      const base = { id: msgId, fromId: user.id, fromPseudo: user.pseudo, content, attachments: [], date, isGroup: false };
-      const updatedUsers = allUsers.map(u => {
-        if (u.id === user.id) return { ...u, messages: [...(u.messages || []), { ...base, toId: recipient.id, toPseudo: recipient.pseudo, read: true }] };
-        if (u.id === recipient.id) return { ...u, messages: [...(u.messages || []), { ...base, toId: user.id, toPseudo: user.pseudo, read: false }] };
-        return u;
+      await sendGroupMessage({
+        groupId: selectedConv.groupId,
+        participantIds: selectedConv.participantIds,
+        participantPseudos: selectedConv.participantPseudos,
+        content, attachments: [], groupName: selectedConv.groupName,
       });
-      localStorage.setItem("mh_users", JSON.stringify(updatedUsers));
+    } else {
+      await sendMessage(selectedConv.otherId, content, []);
     }
-    setTimeout(() => setAllMsgs(getMessages()), 100);
   };
 
-  // Extract total from order message content
   const extractOrderTotal = (content) => {
     const m = content?.match(/Total\s*:\s*([\d., ]+)/);
     return m ? parseFloat(m[1].replace(/\s/g, "").replace(",", ".")) : null;
@@ -361,32 +289,22 @@ export default function Messages() {
         reader.readAsDataURL(file);
       }))
     );
-    const msgId = `msg-${Date.now()}`;
-    const date = new Date().toISOString();
-    const allUsers = JSON.parse(localStorage.getItem("mh_users") || "[]");
     if (selectedConv.isGroup) {
       const { groupId, participantIds, participantPseudos } = selectedConv;
-      const groupMsg = { id: msgId, fromId: user.id, fromPseudo: user.pseudo, content: input.trim(), attachments: encodedAttachments, date, read: false, isGroup: true, groupId, participantIds, participantPseudos, groupName: selectedConv.groupName || null };
-      const updatedUsers = allUsers.map(u => !participantIds?.includes(u.id) ? u : { ...u, messages: [...(u.messages || []), { ...groupMsg, read: u.id === user.id }] });
-      localStorage.setItem("mh_users", JSON.stringify(updatedUsers));
-      const recipients = updatedUsers.filter(u => participantIds.includes(u.id) && u.id !== user.id && u.oneSignalId);
+      await sendGroupMessage({
+        groupId, participantIds, participantPseudos,
+        content: input.trim(), attachments: encodedAttachments,
+        groupName: selectedConv.groupName,
+      });
+      const recipients = users.filter(u => participantIds.includes(u.id) && u.id !== user.id && u.oneSignalId);
       if (recipients.length > 0) sendNotification(recipients.map(u => u.oneSignalId), `💬 ${user.pseudo} — ${selectedConv.groupName || "Groupe"}`, input.slice(0, 100)).catch(() => {});
     } else {
-      const recipient = allUsers.find(u => u.id === selectedConv.otherId);
-      if (!recipient) return;
-      const msgForSender = { id: msgId, fromId: user.id, fromPseudo: user.pseudo, toId: recipient.id, toPseudo: recipient.pseudo, content: input.trim(), attachments: encodedAttachments, date, read: true, isGroup: false };
-      const msgForRecipient = { id: msgId, fromId: user.id, fromPseudo: user.pseudo, toId: user.id, toPseudo: user.pseudo, content: input.trim(), attachments: encodedAttachments, date, read: false, isGroup: false };
-      const updatedUsers = allUsers.map(u => {
-        if (u.id === user.id) return { ...u, messages: [...(u.messages || []), msgForSender] };
-        if (u.id === recipient.id) return { ...u, messages: [...(u.messages || []), msgForRecipient] };
-        return u;
-      });
-      localStorage.setItem("mh_users", JSON.stringify(updatedUsers));
-      if (recipient.oneSignalId) sendNotification([recipient.oneSignalId], `💬 ${user.pseudo}`, input.slice(0, 100)).catch(() => {});
+      await sendMessage(selectedConv.otherId, input.trim(), encodedAttachments);
+      const recipient = users.find(u => u.id === selectedConv.otherId);
+      if (recipient?.oneSignalId) sendNotification([recipient.oneSignalId], `💬 ${user.pseudo}`, input.slice(0, 100)).catch(() => {});
     }
     setInput("");
     setAttachments([]);
-    setTimeout(() => setAllMsgs(getMessages()), 100);
   };
 
   const paymentPanel = (
@@ -422,7 +340,6 @@ export default function Messages() {
     </div>
   );
 
-  // Users not yet in current group
   const usersNotInGroup = selectedConv?.isGroup
     ? availableUsers.filter(u => !selectedConv.participantIds?.includes(u.id))
     : [];
@@ -466,11 +383,7 @@ export default function Messages() {
                       )}
                       <div className="msg-conv-participants">{selectedConv.participantPseudos?.join(" · ")}</div>
                     </div>
-                    <button
-                      className="group-add-btn"
-                      onClick={() => { setShowAddToGroup(v => !v); setAddGroupSearch(""); }}
-                      title="Ajouter un membre"
-                    >+ Ajouter</button>
+                    <button className="group-add-btn" onClick={() => { setShowAddToGroup(v => !v); setAddGroupSearch(""); }} title="Ajouter un membre">+ Ajouter</button>
                     <button className="conv-delete-btn" onClick={deleteConversation} title="Supprimer la conversation">🗑️</button>
                   </div>
                 ) : (
@@ -481,16 +394,9 @@ export default function Messages() {
                   </div>
                 )}
 
-                {/* Add-to-group dropdown */}
                 {showAddToGroup && selectedConv.isGroup && (
                   <div className="add-to-group-panel">
-                    <input
-                      className="mh-input"
-                      placeholder="Chercher un membre..."
-                      value={addGroupSearch}
-                      onChange={e => setAddGroupSearch(e.target.value)}
-                      autoFocus
-                    />
+                    <input className="mh-input" placeholder="Chercher un membre..." value={addGroupSearch} onChange={e => setAddGroupSearch(e.target.value)} autoFocus />
                     <div className="add-to-group-list">
                       {usersNotInGroup
                         .filter(u => u.pseudo.toLowerCase().includes(addGroupSearch.toLowerCase()))
@@ -560,7 +466,6 @@ export default function Messages() {
             <input type="file" accept="image/*,.pdf,.txt,.doc,.docx" style={{ display: "none" }} onChange={handleFileAttach} multiple />
           </label>
 
-          {/* Discount menu — admin only, visible when thread has an order */}
           {user?.isAdmin && lastOrderMsg && (
             <div className="discount-wrap" ref={discountRef}>
               <button
@@ -617,14 +522,12 @@ export default function Messages() {
         </form>
       </div>
 
-      {/* New conversation modal */}
       {showNewConv && (
         <div className="new-conv-modal">
           <div className="new-conv-inner">
             <button className="modal-close" onClick={() => { setShowNewConv(false); setSearchUser(""); setNewConvMode("dm"); setSelectedGroupUsers([]); }}>✕</button>
             <h3 className="new-conv-title">Nouvelle conversation</h3>
 
-            {/* DM / Group toggle */}
             <div className="new-conv-tabs">
               <button className={`new-conv-tab${newConvMode === "dm" ? " active" : ""}`} onClick={() => { setNewConvMode("dm"); setSelectedGroupUsers([]); }}>
                 💬 Message privé
@@ -634,13 +537,7 @@ export default function Messages() {
               </button>
             </div>
 
-            <input
-              className="mh-input"
-              placeholder="Chercher un membre..."
-              value={searchUser}
-              onChange={e => setSearchUser(e.target.value)}
-              autoFocus
-            />
+            <input className="mh-input" placeholder="Chercher un membre..." value={searchUser} onChange={e => setSearchUser(e.target.value)} autoFocus />
 
             {newConvMode === "dm" ? (
               <div className="new-conv-list">

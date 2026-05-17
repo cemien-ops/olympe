@@ -1,160 +1,158 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { requestPermission } from "../onesignal";
+import { supabase } from "../supabase";
 
 const AuthContext = createContext();
-
-const USERS_KEY    = "mh_users";
-const MESSAGES_KEY = "mh_messages";
-const SESSION_KEY  = "mh_session";
+const SESSION_KEY = "mh_session";
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-function loadUsers()    { try { return JSON.parse(localStorage.getItem(USERS_KEY))    || []; } catch { return []; } }
-function loadMessages() { try { return JSON.parse(localStorage.getItem(MESSAGES_KEY)) || []; } catch { return []; } }
-function saveUsersStorage(u)   { localStorage.setItem(USERS_KEY,    JSON.stringify(u)); }
-function saveMessagesStorage(m){ localStorage.setItem(MESSAGES_KEY, JSON.stringify(m)); }
+// Normalize DB snake_case → camelCase (keeps both for compatibility)
+const normalizeUser = (u) => {
+  if (!u) return null;
+  return {
+    ...u,
+    isAdmin:     u.is_admin      ?? false,
+    customId:    u.custom_id     ?? null,
+    oneSignalId: u.onesignal_id  ?? null,
+  };
+};
 
-const DB_VERSION = "5";
+const normalizeMsg = (m) => {
+  if (!m) return null;
+  return {
+    ...m,
+    fromId:           m.from_id            ?? m.fromId,
+    fromPseudo:       m.from_pseudo         ?? m.fromPseudo,
+    toId:             m.to_id              ?? m.toId,
+    toPseudo:         m.to_pseudo           ?? m.toPseudo,
+    isGroup:          m.is_group            ?? false,
+    groupId:          m.group_id            ?? null,
+    participantIds:   m.participant_ids     ?? [],
+    participantPseudos: m.participant_pseudos ?? [],
+    groupName:        m.group_name          ?? null,
+    readBy:           m.read_by             ?? [],
+  };
+};
+
+async function seedIfEmpty() {
+  if (!supabase) return;
+  const { data: existing } = await supabase.from("users").select("id").limit(1);
+  if (existing && existing.length > 0) return;
+
+  const hashKraken = await sha256("Kraken");
+  const pw         = await sha256("olympe");
+
+  const mkAv = (bg, shape) =>
+    `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='${encodeURIComponent(bg)}'/%3E${shape}%3C/svg%3E`;
+  const avDip = (bg) => mkAv(bg, "%3Ccircle cx='50' cy='50' r='28' fill='%238BA3C7' opacity='0.55'/%3E%3Ccircle cx='50' cy='50' r='16' fill='%238BA3C7' opacity='0.4'/%3E");
+  const avAmb = (bg) => mkAv(bg, "%3Crect x='30' y='30' width='40' height='40' rx='4' fill='%23CD7F32' opacity='0.6' transform='rotate(45 50 50)'/%3E");
+  const avMbr = (bg) => mkAv(bg, "%3Crect x='32' y='32' width='36' height='36' rx='3' fill='none' stroke='%23C9A227' stroke-width='3' opacity='0.65' transform='rotate(45 50 50)'/%3E%3Ccircle cx='50' cy='50' r='6' fill='%23C9A227' opacity='0.5'/%3E");
+
+  await supabase.from("users").insert([
+    { id: "zeus-001",          pseudo: "Kraken",     password: hashKraken, is_admin: true,  faction: "olympe", avatar: "https://i.imgur.com/QtQ2XUJ.jpg", perms: ["Gérant", "Couronne"], abonnement: null, whitelist: [] },
+    { id: "user-hermes",       pseudo: "Hermès",     password: pw,         is_admin: false, faction: "olympe", avatar: avDip("#0a1825"), perms: ["Diplomate"],   abonnement: "GOLD",   whitelist: [] },
+    { id: "user-athena",       pseudo: "Athéna",     password: pw,         is_admin: false, faction: "olympe", avatar: avDip("#0d1220"), perms: ["Diplomate"],   abonnement: "SILVER", whitelist: [] },
+    { id: "user-poseidon",     pseudo: "Poséidon",   password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#071520"), perms: ["Ambassadeur"], abonnement: null,     whitelist: ["Elysée"] },
+    { id: "user-ares",         pseudo: "Arès",       password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#1a0808"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-apollon",      pseudo: "Apollon",    password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#1a1208"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-artemis",      pseudo: "Artémis",    password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#080f1a"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-hephaistos",   pseudo: "Héphaïstos", password: pw,         is_admin: false, faction: "olympe", avatar: avMbr("#120e08"), perms: [],             abonnement: null,     whitelist: [] },
+    { id: "user-dionysos",     pseudo: "Dionysos",   password: pw,         is_admin: false, faction: "olympe", avatar: avMbr("#0e0812"), perms: [],             abonnement: null,     whitelist: [] },
+    { id: "user-hades",        pseudo: "Hadès",      password: pw,         is_admin: false, faction: "olympe", avatar: avMbr("#08080e"), perms: [],             abonnement: null,     whitelist: [] },
+  ]);
+
+  await supabase.from("messages").insert([{
+    id: "welcome-kraken",
+    from_id: "system", from_pseudo: "Système",
+    to_id: "zeus-001", to_pseudo: "Kraken",
+    content: "Bienvenue, Seigneur de l'Olympe. Le site est opérationnel.",
+    date: new Date().toISOString(), read: true,
+  }]);
+}
 
 export function AuthProvider({ children }) {
-  const [users, setUsersState] = useState([]);
-  const [user,  setUser]       = useState(null);
-  const [msgs,  setMsgsState]  = useState([]);
+  const [users, setUsers] = useState([]);
+  const [user,  setUser]  = useState(null);
+  const [msgs,  setMsgs]  = useState([]);
 
+  // ── Initial load ──────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!supabase) {
+      console.warn("Supabase non configuré. Remplis VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans .env.local");
+      return;
+    }
     (async () => {
-      const savedVersion = localStorage.getItem("mh_db_version");
-      if (savedVersion !== DB_VERSION) {
-        localStorage.removeItem(USERS_KEY);
-        localStorage.setItem("mh_db_version", DB_VERSION);
-      }
-
-      let stored = loadUsers();
-      let storedMsgs = loadMessages();
-
-      if (stored.length === 0) {
-        const hashKraken = await sha256("Kraken");
-        const pw         = await sha256("olympe");
-
-        const mkAv = (bg, shape) =>
-          `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='${encodeURIComponent(bg)}'/%3E${shape}%3C/svg%3E`;
-
-        // Diplomate : cercle intérieur argent
-        const avDip  = (bg) => mkAv(bg, "%3Ccircle cx='50' cy='50' r='28' fill='%238BA3C7' opacity='0.55'/%3E%3Ccircle cx='50' cy='50' r='16' fill='%238BA3C7' opacity='0.4'/%3E");
-        // Ambassadeur : losange bronze
-        const avAmb  = (bg) => mkAv(bg, "%3Crect x='30' y='30' width='40' height='40' rx='4' fill='%23CD7F32' opacity='0.6' transform='rotate(45 50 50)'/%3E");
-        // Membre : losange simple doré
-        const avMbr  = (bg) => mkAv(bg, "%3Crect x='32' y='32' width='36' height='36' rx='3' fill='none' stroke='%23C9A227' stroke-width='3' opacity='0.65' transform='rotate(45 50 50)'/%3E%3Ccircle cx='50' cy='50' r='6' fill='%23C9A227' opacity='0.5'/%3E");
-
-        stored = [
-          {
-            id: "zeus-001", pseudo: "Kraken", password: hashKraken,
-            isAdmin: true, faction: "olympe",
-            avatar: "https://i.imgur.com/QtQ2XUJ.jpg",
-            perms: ["Gérant", "Couronne"], abonnement: null, whitelist: [],
-          },
-          {
-            id: "user-hermes", pseudo: "Hermès", password: pw,
-            isAdmin: false, faction: "olympe",
-            avatar: avDip("#0a1825"),
-            perms: ["Diplomate"], abonnement: "GOLD", whitelist: [],
-          },
-          {
-            id: "user-athena", pseudo: "Athéna", password: pw,
-            isAdmin: false, faction: "olympe",
-            avatar: avDip("#0d1220"),
-            perms: ["Diplomate"], abonnement: "SILVER", whitelist: [],
-          },
-          {
-            id: "user-poseidon", pseudo: "Poséidon", password: pw,
-            isAdmin: false, faction: "olympe",
-            avatar: avAmb("#071520"),
-            perms: ["Ambassadeur"], abonnement: null, whitelist: ["Elysée"],
-          },
-          {
-            id: "user-ares", pseudo: "Arès", password: pw,
-            isAdmin: false, faction: "olympe",
-            avatar: avAmb("#1a0808"),
-            perms: ["Ambassadeur"], abonnement: null, whitelist: [],
-          },
-          {
-            id: "user-apollon", pseudo: "Apollon", password: pw,
-            isAdmin: false, faction: "olympe",
-            avatar: avAmb("#1a1208"),
-            perms: ["Ambassadeur"], abonnement: null, whitelist: [],
-          },
-          {
-            id: "user-artemis", pseudo: "Artémis", password: pw,
-            isAdmin: false, faction: "olympe",
-            avatar: avAmb("#080f1a"),
-            perms: ["Ambassadeur"], abonnement: null, whitelist: [],
-          },
-          {
-            id: "user-hephaistos", pseudo: "Héphaïstos", password: pw,
-            isAdmin: false, faction: "olympe",
-            avatar: avMbr("#120e08"),
-            perms: [], abonnement: null, whitelist: [],
-          },
-          {
-            id: "user-dionysos", pseudo: "Dionysos", password: pw,
-            isAdmin: false, faction: "olympe",
-            avatar: avMbr("#0e0812"),
-            perms: [], abonnement: null, whitelist: [],
-          },
-          {
-            id: "user-hades", pseudo: "Hadès", password: pw,
-            isAdmin: false, faction: "olympe",
-            avatar: avMbr("#08080e"),
-            perms: [], abonnement: null, whitelist: [],
-          },
-        ];
-        saveUsersStorage(stored);
-
-        storedMsgs = [
-          {
-            id: "welcome-kraken",
-            fromId: "system", fromPseudo: "Système",
-            toId: "zeus-001", toPseudo: "Kraken",
-            content: "Bienvenue, Seigneur de l'Olympe. Le site est opérationnel.",
-            date: new Date().toISOString(), read: true,
-          },
-        ];
-        saveMessagesStorage(storedMsgs);
-      }
-
-      setUsersState(stored);
-      setMsgsState(storedMsgs);
-
+      await seedIfEmpty();
+      const [{ data: ud }, { data: md }] = await Promise.all([
+        supabase.from("users").select("*"),
+        supabase.from("messages").select("*"),
+      ]);
+      const nu = (ud || []).map(normalizeUser);
+      const nm = (md || []).map(normalizeMsg);
+      setUsers(nu);
+      setMsgs(nm);
       const sessionId = localStorage.getItem(SESSION_KEY);
       if (sessionId) {
-        const u = stored.find(u => u.id === sessionId);
+        const u = nu.find(u => u.id === sessionId);
         if (u) setUser(u);
       }
     })();
   }, []);
 
-  const saveUsers = (newUsers) => { setUsersState(newUsers); saveUsersStorage(newUsers); };
-  const saveMsgs  = (newMsgs)  => { setMsgsState(newMsgs);  saveMessagesStorage(newMsgs); };
+  // ── Realtime subscriptions ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!supabase) return;
+    const channel = supabase.channel("olympe-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "users" },
+        ({ eventType, new: row, old: oldRow }) => {
+          if (eventType === "INSERT") {
+            setUsers(prev => [...prev, normalizeUser(row)]);
+          } else if (eventType === "UPDATE") {
+            const n = normalizeUser(row);
+            setUsers(prev => prev.map(u => u.id === n.id ? n : u));
+            setUser(prev => prev?.id === n.id ? n : prev);
+          } else if (eventType === "DELETE") {
+            setUsers(prev => prev.filter(u => u.id !== oldRow.id));
+            setUser(prev => prev?.id === oldRow.id ? null : prev);
+          }
+        })
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" },
+        ({ eventType, new: row, old: oldRow }) => {
+          if (eventType === "INSERT") {
+            setMsgs(prev => [...prev, normalizeMsg(row)]);
+          } else if (eventType === "UPDATE") {
+            const n = normalizeMsg(row);
+            setMsgs(prev => prev.map(m => m.id === n.id ? n : m));
+          } else if (eventType === "DELETE") {
+            setMsgs(prev => prev.filter(m => m.id !== oldRow.id));
+          }
+        })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, []);
 
+  // ── Auth ──────────────────────────────────────────────────────────────────
   const login = async (pseudo, password) => {
+    if (!supabase) return false;
     const hash = await sha256(password);
-    const u = loadUsers().find(u => u.pseudo.toLowerCase() === pseudo.trim().toLowerCase() && u.password === hash);
-    if (!u) return false;
+    const { data } = await supabase
+      .from("users")
+      .select("*")
+      .ilike("pseudo", pseudo.trim())
+      .eq("password", hash)
+      .single();
+    if (!data) return false;
+    const u = normalizeUser(data);
     setUser(u);
     localStorage.setItem(SESSION_KEY, u.id);
     setTimeout(async () => {
       try {
         const osId = await requestPermission();
-        if (osId) {
-          const allUsers = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-          const updated = allUsers.map(usr =>
-            usr.id === u.id ? { ...usr, oneSignalId: osId } : usr
-          );
-          localStorage.setItem(USERS_KEY, JSON.stringify(updated));
-        }
+        if (osId) await supabase.from("users").update({ onesignal_id: osId }).eq("id", u.id);
       } catch {}
     }, 2000);
     return true;
@@ -165,147 +163,216 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(SESSION_KEY);
   };
 
+  // ── Users CRUD ────────────────────────────────────────────────────────────
   const createUser = async ({ pseudo, password, avatar, isAdmin, customId, perms: userPerms, abonnement, whitelist: userWL }) => {
+    if (!supabase) return null;
     const hash = await sha256(password);
-    const newUser = {
-      id: `user-${Date.now()}`,
-      pseudo: pseudo.trim(),
-      password: hash,
-      isAdmin: !!isAdmin,
-      avatar: avatar || "⚡",
-      customId: customId || null,
-      parrain: user?.pseudo || null,
-      faction: "olympe",
-      perms: userPerms || [],
+    const row = {
+      id:         `user-${Date.now()}`,
+      pseudo:     pseudo.trim(),
+      password:   hash,
+      is_admin:   !!isAdmin,
+      avatar:     avatar || "⚡",
+      custom_id:  customId || null,
+      parrain:    user?.pseudo || null,
+      faction:    "olympe",
+      perms:      userPerms || [],
       abonnement: abonnement || null,
-      whitelist: userWL || [],
+      whitelist:  userWL || [],
     };
-    const updated = [...loadUsers(), newUser];
-    saveUsers(updated);
-    const autoMsg = {
-      id: `msg-${Date.now()}-welcome`,
-      fromId: newUser.id, fromPseudo: newUser.pseudo,
-      toId: "zeus-001", toPseudo: "Kraken",
-      content: `Salve Kraken, je rejoins les rangs des Olympiens.`,
-      date: new Date().toISOString(), read: false,
-    };
-    saveMsgs([...loadMessages(), autoMsg]);
-    return newUser;
+    const { data } = await supabase.from("users").insert(row).select().single();
+    if (data) {
+      await supabase.from("messages").insert({
+        id: `msg-${Date.now()}-welcome`,
+        from_id: data.id, from_pseudo: data.pseudo,
+        to_id: "zeus-001", to_pseudo: "Kraken",
+        content: `Salve Kraken, je rejoins les rangs des Olympiens.`,
+        date: new Date().toISOString(), read: false,
+      });
+    }
+    return data ? normalizeUser(data) : null;
   };
 
-  const deleteUser = (id) => {
-    if (id === "zeus-001") return;
-    saveUsers(loadUsers().filter(u => u.id !== id));
+  const deleteUser = async (id) => {
+    if (!supabase || id === "zeus-001") return;
+    await supabase.from("users").delete().eq("id", id);
+  };
+
+  const updateUser = async (id, data) => {
+    if (!supabase) return;
+    const dbData = { ...data };
+    if ("isAdmin"     in dbData) { dbData.is_admin     = dbData.isAdmin;     delete dbData.isAdmin; }
+    if ("customId"    in dbData) { dbData.custom_id    = dbData.customId;    delete dbData.customId; }
+    if ("oneSignalId" in dbData) { dbData.onesignal_id = dbData.oneSignalId; delete dbData.oneSignalId; }
+    await supabase.from("users").update(dbData).eq("id", id);
+    // Optimistic local update
+    const patch = { ...dbData };
+    if ("is_admin"     in patch) patch.isAdmin  = patch.is_admin;
+    if ("custom_id"    in patch) patch.customId = patch.custom_id;
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, ...patch } : u));
+    if (user?.id === id) setUser(prev => ({ ...prev, ...patch }));
   };
 
   const changePassword = async (currentPassword, newPassword) => {
+    if (!supabase || !user) return false;
     const currentHash = await sha256(currentPassword);
-    const allUsers = loadUsers();
-    const u = allUsers.find(u => u.id === user?.id);
+    const u = users.find(u => u.id === user.id);
     if (!u || u.password !== currentHash) return false;
     const newHash = await sha256(newPassword);
-    saveUsers(allUsers.map(u => u.id === user.id ? { ...u, password: newHash } : u));
+    await supabase.from("users").update({ password: newHash }).eq("id", user.id);
     return true;
   };
 
-  const updateUser = (id, data) => {
-    const updated = loadUsers().map(u => u.id === id ? { ...u, ...data } : u);
-    saveUsers(updated);
-    if (user?.id === id) setUser(prev => ({ ...prev, ...data }));
-  };
-
-  const sendMessage = (toId, content, attachments = []) => {
-    const allUsers = loadUsers();
-    const toUser = allUsers.find(u => u.id === toId);
-    if (!toUser || !user) return;
-    const msg = {
+  // ── Messages ──────────────────────────────────────────────────────────────
+  const sendMessage = async (toId, content, attachments = []) => {
+    if (!supabase || !user) return;
+    const toUser = users.find(u => u.id === toId);
+    if (!toUser) return;
+    await supabase.from("messages").insert({
       id: `msg-${Date.now()}`,
-      fromId: user.id, fromPseudo: user.pseudo,
-      toId, toPseudo: toUser.pseudo,
-      content, date: new Date().toISOString(), read: false,
-      attachments,
-    };
-    const updated = [...loadMessages(), msg];
-    saveMsgs(updated);
+      from_id: user.id, from_pseudo: user.pseudo,
+      to_id: toId, to_pseudo: toUser.pseudo,
+      content, date: new Date().toISOString(),
+      read: false, is_group: false,
+      attachments: attachments || [],
+    });
   };
 
-  const getUserMessages = () => {
+  const sendGroupMessage = async ({ groupId, participantIds, participantPseudos, content, attachments = [], groupName = null }) => {
+    if (!supabase || !user) return;
+    await supabase.from("messages").insert({
+      id: `msg-${Date.now()}`,
+      from_id: user.id, from_pseudo: user.pseudo,
+      content, date: new Date().toISOString(),
+      read_by: [user.id],
+      attachments, is_group: true,
+      group_id: groupId,
+      participant_ids: participantIds,
+      participant_pseudos: participantPseudos,
+      group_name: groupName,
+    });
+  };
+
+  const createGroupConv = async (participants) => {
+    if (!supabase || !user) return null;
+    const groupId        = `group-${Date.now()}`;
+    const participantIds     = [user, ...participants].map(u => u.id);
+    const participantPseudos = [user, ...participants].map(u => u.pseudo);
+    await supabase.from("messages").insert({
+      id: `msg-${Date.now()}-init`,
+      from_id: user.id, from_pseudo: user.pseudo,
+      content: `Groupe créé par ${user.pseudo}`,
+      date: new Date().toISOString(),
+      read_by: [user.id],
+      attachments: [], is_group: true,
+      group_id: groupId,
+      participant_ids: participantIds,
+      participant_pseudos: participantPseudos,
+      group_name: null,
+    });
+    return { groupId, participantIds, participantPseudos };
+  };
+
+  const addUserToGroup = async (groupId, newU, currentParticipantIds, currentParticipantPseudos) => {
+    if (!supabase || newU === undefined) return null;
+    const newIds    = [...currentParticipantIds, newU.id];
+    const newPseudos = [...currentParticipantPseudos, newU.pseudo];
+    await supabase.from("messages")
+      .update({ participant_ids: newIds, participant_pseudos: newPseudos })
+      .eq("group_id", groupId);
+    await supabase.from("messages").insert({
+      id: `msg-${Date.now()}-join`,
+      from_id: "system", from_pseudo: "Système",
+      content: `${newU.pseudo} a rejoint le groupe`,
+      date: new Date().toISOString(),
+      read_by: newIds,
+      attachments: [], is_group: true,
+      group_id: groupId,
+      participant_ids: newIds,
+      participant_pseudos: newPseudos,
+      group_name: null,
+    });
+    return { participantIds: newIds, participantPseudos: newPseudos };
+  };
+
+  const saveGroupNameDB = async (groupId, name) => {
+    if (!supabase) return;
+    await supabase.from("messages").update({ group_name: name }).eq("group_id", groupId);
+    setMsgs(prev => prev.map(m => m.groupId === groupId ? { ...m, group_name: name, groupName: name } : m));
+  };
+
+  const deleteConversationDB = async (conv) => {
+    if (!supabase || !user) return;
+    if (conv.isGroup) {
+      await supabase.from("messages").delete().eq("group_id", conv.groupId);
+    } else {
+      await supabase.from("messages").delete().eq("from_id", user.id).eq("to_id", conv.otherId);
+      await supabase.from("messages").delete().eq("from_id", conv.otherId).eq("to_id", user.id);
+    }
+  };
+
+  const markRead = async (messageId) => {
+    if (!supabase) return;
+    await supabase.from("messages").update({ read: true }).eq("id", messageId);
+    setMsgs(prev => prev.map(m => m.id === messageId ? { ...m, read: true } : m));
+  };
+
+  const markAllRead = async (contactId) => {
+    if (!supabase || !user) return;
+    await supabase.from("messages").update({ read: true }).eq("to_id", user.id).eq("from_id", contactId);
+    setMsgs(prev => prev.map(m => m.toId === user.id && m.fromId === contactId ? { ...m, read: true } : m));
+  };
+
+  const markEverythingRead = async () => {
+    if (!supabase || !user) return;
+    await supabase.from("messages").update({ read: true }).eq("to_id", user.id);
+    setMsgs(prev => prev.map(m => m.toId === user.id ? { ...m, read: true } : m));
+  };
+
+  const markGroupRead = async (groupId) => {
+    if (!supabase || !user) return;
+    const unread = msgs.filter(m =>
+      m.isGroup && m.groupId === groupId && m.fromId !== user.id && !m.readBy?.includes(user.id)
+    );
+    for (const m of unread) {
+      const newReadBy = [...(m.readBy || []), user.id];
+      await supabase.from("messages").update({ read_by: newReadBy }).eq("id", m.id);
+      setMsgs(prev => prev.map(x => x.id === m.id ? { ...x, read_by: newReadBy, readBy: newReadBy } : x));
+    }
+  };
+
+  // ── Derived data ──────────────────────────────────────────────────────────
+  const getMessages = useCallback(() => {
     if (!user) return [];
-    const allUsers = loadUsers();
-    const freshUser = allUsers.find(u => u.id === user.id);
-    const flat = loadMessages().filter(m =>
+    return msgs.filter(m =>
       m.toId === user.id || m.fromId === user.id ||
       (m.isGroup && Array.isArray(m.participantIds) && m.participantIds.includes(user.id))
     );
-    const perUser = (freshUser?.messages || []);
-    const merged = [...flat, ...perUser];
-    const seen = new Set();
-    return merged.filter(m => { if (seen.has(m.id)) return false; seen.add(m.id); return true; });
-  };
+  }, [msgs, user]);
 
-  const getMessages = () => getUserMessages();
-
-  const getUnreadCount = () => {
-    return getUserMessages().filter(m =>
-      !m.read && m.fromId !== user?.id && m.fromId !== "system"
-    ).length;
-  };
-
-  const markRead = (messageId) => {
-    const updated = loadMessages().map(m => m.id === messageId ? { ...m, read: true } : m);
-    saveMsgs(updated);
-    const allUsers = loadUsers();
-    const updatedUsers = allUsers.map(u =>
-      u.id === user?.id
-        ? { ...u, messages: (u.messages || []).map(m => m.id === messageId ? { ...m, read: true } : m) }
-        : u
-    );
-    saveUsersStorage(updatedUsers);
-  };
-
-  const markAllRead = (contactId) => {
-    const updated = loadMessages().map(m =>
-      m.toId === user?.id && m.fromId === contactId ? { ...m, read: true } : m
-    );
-    saveMsgs(updated);
-    const allUsers = loadUsers();
-    const updatedUsers = allUsers.map(u =>
-      u.id === user?.id
-        ? { ...u, messages: (u.messages || []).map(m => m.fromId === contactId ? { ...m, read: true } : m) }
-        : u
-    );
-    saveUsersStorage(updatedUsers);
-  };
-
-  const markEverythingRead = () => {
-    const updated = loadMessages().map(m =>
-      m.toId === user?.id ? { ...m, read: true } : m
-    );
-    saveMsgs(updated);
-    const allUsers = loadUsers();
-    const updatedUsers = allUsers.map(u =>
-      u.id === user?.id
-        ? { ...u, messages: (u.messages || []).map(m => ({ ...m, read: true })) }
-        : u
-    );
-    saveUsersStorage(updatedUsers);
-  };
+  const getUnreadCount = useCallback(() => {
+    if (!user) return 0;
+    return getMessages().filter(m => {
+      if (m.isGroup) return m.fromId !== user.id && !m.readBy?.includes(user.id);
+      return !m.read && m.toId === user.id && m.fromId !== "system";
+    }).length;
+  }, [getMessages, user]);
 
   const members = users.map(u => ({
-    pseudo: u.pseudo,
-    avatar: u.avatar,
-    customId: u.customId || null,
-    parrain: u.parrain || null,
-    faction: u.faction || "olympe",
-    isAdmin: !!u.isAdmin,
-    perms: u.perms || [],
+    pseudo:     u.pseudo,
+    avatar:     u.avatar,
+    customId:   u.customId  || null,
+    parrain:    u.parrain   || null,
+    faction:    u.faction   || "olympe",
+    isAdmin:    !!u.isAdmin,
+    perms:      u.perms     || [],
     abonnement: u.abonnement || null,
-    whitelist: u.whitelist || [],
+    whitelist:  u.whitelist  || [],
   }));
 
-  const deleteProfile = (pseudo) => {
-    const u = loadUsers().find(u => u.pseudo === pseudo);
-    if (u && u.id !== "zeus-001") deleteUser(u.id);
+  const deleteProfile = async (pseudo) => {
+    const u = users.find(u => u.pseudo === pseudo);
+    if (u && u.id !== "zeus-001") await deleteUser(u.id);
     logout();
   };
 
@@ -317,8 +384,10 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       user, users, members,
-      login, logout, createUser, deleteUser, updateUser,
-      sendMessage, getMessages, getUnreadCount, markRead, markAllRead, markEverythingRead, changePassword,
+      login, logout, createUser, deleteUser, updateUser, changePassword,
+      sendMessage, sendGroupMessage, createGroupConv, addUserToGroup,
+      saveGroupNameDB, deleteConversationDB, markGroupRead,
+      getMessages, getUnreadCount, markRead, markAllRead, markEverythingRead,
       deleteProfile, updatePossessions,
     }}>
       {children}

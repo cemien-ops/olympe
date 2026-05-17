@@ -94,7 +94,7 @@ function RoleAssignSection({ selectedPerms, setSelectedPerms, selectedAbo, setSe
 }
 
 export default function Admin() {
-  const { user, users, createUser, deleteUser, updateUser } = useAuth();
+  const { user, users, createUser, deleteUser, updateUser, sendMessage } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState("members");
   const [confirmPending, setConfirmPending] = useState(null);
@@ -251,15 +251,13 @@ export default function Admin() {
     "DIAMS": 74.99, "RUBY": 149.99, "OPAL": 299.99,
   };
 
-  const handleTreated = (order) => {
+  const handleTreated = async (order) => {
     const updatedOrders = orders.map(o => o.id === order.id ? { ...o, treated: true } : o);
     saveOrders(updatedOrders);
     setOrders(updatedOrders);
 
-    const allUsers = JSON.parse(localStorage.getItem("mh_users") || "[]");
-    const memberIndex = allUsers.findIndex(u => u.id === order.userId);
-    if (memberIndex === -1) return;
-    const member = { ...allUsers[memberIndex] };
+    const member = users.find(u => u.id === order.userId);
+    if (!member) return;
 
     const permNames = new Set(Object.keys(PERM_PRICES));
     const aboNames  = new Set(Object.keys(ABO_PRICES));
@@ -267,23 +265,22 @@ export default function Admin() {
     const aboItems  = order.items.filter(i => aboNames.has(i.name));
     const wlItems   = order.items.filter(i => !permNames.has(i.name) && !aboNames.has(i.name));
 
-    if (permItems.length > 0) {
-      const newPerm = permItems.sort((a, b) => (PERM_PRICES[b.name] || 0) - (PERM_PRICES[a.name] || 0))[0];
-      const knownPerms = Object.keys(PERM_PRICES);
-      member.perms = [
-        ...(member.perms || []).filter(p => !knownPerms.includes(p)),
-        newPerm.name,
-      ];
-    }
+    let newPerms      = member.perms      || [];
+    let newAbonnement = member.abonnement || null;
+    let newWhitelist  = member.whitelist  || [];
 
+    if (permItems.length > 0) {
+      const newPerm    = permItems.sort((a, b) => (PERM_PRICES[b.name] || 0) - (PERM_PRICES[a.name] || 0))[0];
+      const knownPerms = Object.keys(PERM_PRICES);
+      newPerms = [...(member.perms || []).filter(p => !knownPerms.includes(p)), newPerm.name];
+    }
     if (aboItems.length > 0) {
       const newAbo = aboItems.sort((a, b) => (ABO_PRICES[b.name] || 0) - (ABO_PRICES[a.name] || 0))[0];
-      member.abonnement = newAbo.name;
+      newAbonnement = newAbo.name;
     }
-
     if (wlItems.length > 0) {
       const newWLNames = wlItems.map(i => i.name);
-      member.whitelist = [...new Set([...(member.whitelist || []), ...newWLNames])];
+      newWhitelist = [...new Set([...newWhitelist, ...newWLNames])];
     }
 
     const confirmContent = [
@@ -296,22 +293,8 @@ export default function Admin() {
       "Merci pour ta confiance ! ⚡",
     ].filter(l => l !== null).join("\n");
 
-    const msgs = JSON.parse(localStorage.getItem("mh_messages") || "[]");
-    msgs.push({
-      id: `msg-${Date.now()}`,
-      fromId: "zeus-001", fromPseudo: "Zeus",
-      toId: member.id, toPseudo: member.pseudo,
-      content: confirmContent,
-      date: new Date().toISOString(), read: false,
-      attachments: [],
-    });
-    localStorage.setItem("mh_messages", JSON.stringify(msgs));
-
-    updateUser(member.id, {
-      perms: member.perms,
-      abonnement: member.abonnement,
-      whitelist: member.whitelist,
-    });
+    await sendMessage(member.id, confirmContent);
+    await updateUser(member.id, { perms: newPerms, abonnement: newAbonnement, whitelist: newWhitelist });
   };
 
   return (
