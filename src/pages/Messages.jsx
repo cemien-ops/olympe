@@ -51,6 +51,7 @@ export default function Messages() {
   const [discountOpen,       setDiscountOpen]       = useState(false);
   const discountRef = useRef(null);
   const [confirmPending, setConfirmPending] = useState(null);
+  const [lightbox, setLightbox] = useState(null);
 
   useEffect(() => {
     if (!user) { navigate("/auth"); return; }
@@ -346,6 +347,11 @@ export default function Messages() {
 
   return (
     <main className={`messages-page${selectedConv ? " has-conv" : ""}`}>
+      {lightbox && (
+        <div className="lightbox-overlay" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt="" className="lightbox-img" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
       {confirmPending && (
         <ConfirmModal
           message="Supprimer cette conversation ?"
@@ -433,7 +439,7 @@ export default function Messages() {
                             <div className="msg-attachments">
                               {m.attachments.map((att, idx) => (
                                 att.type?.startsWith("image/") ? (
-                                  <img key={idx} src={att.data} alt={att.name} className="msg-attachment-img" onClick={() => window.open(att.data)} />
+                                  <img key={idx} src={att.data} alt={att.name} className="msg-attachment-img" onClick={() => setLightbox(att.data)} />
                                 ) : (
                                   <a key={idx} href={att.data} download={att.name} className="msg-attachment-file">📄 {att.name}</a>
                                 )

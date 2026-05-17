@@ -2712,8 +2712,22 @@ a { text-decoration: none; color: inherit; }
 .msg-link:hover { color: var(--gold-l); }
 
 .msg-attachments { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }
-.msg-attachment-img { max-width: 200px; border-radius: 8px; cursor: pointer; }
+.msg-attachment-img { max-width: 200px; border-radius: 8px; cursor: pointer; transition: opacity 0.15s; }
+.msg-attachment-img:hover { opacity: 0.85; }
 .msg-attachment-file { color: var(--gold); font-size: 0.82rem; }
+
+.lightbox-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.88);
+  display: flex; align-items: center; justify-content: center;
+  cursor: zoom-out;
+}
+.lightbox-img {
+  max-width: 90vw; max-height: 90vh;
+  border-radius: 8px; object-fit: contain;
+  cursor: default;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+}
 
 .msg-input-bar {
   display: flex;
