@@ -7,6 +7,7 @@ function RpgCorners() {
 }
 
 const TIERS = {
+  createur:    { label:"Fondateur",    icon:"✦",  col:"#C8B4E8", rgb:"200,180,232", slots:1    },
   gerant:      { label:"Gérant",      icon:"♔", col:"#C9A227", rgb:"201,162,39",  slots:1    },
   diplomate:   { label:"Diplomate",   icon:"⚔", col:"#8BA3C7", rgb:"139,163,199", slots:2    },
   ambassadeur: { label:"Ambassadeur", icon:"🏛️", col:"#CD7F32", rgb:"205,127,50",  slots:10   },
@@ -14,6 +15,7 @@ const TIERS = {
 };
 
 function categorize(m) {
+  if (m.perms?.includes("Créateur"))    return "createur";
   if (m.perms?.includes("Gérant"))      return "gerant";
   if (m.perms?.includes("Diplomate"))   return "diplomate";
   if (m.perms?.includes("Ambassadeur")) return "ambassadeur";
@@ -156,6 +158,7 @@ function StarField() {
 
 // ─── Portrait constants ───────────────────────────────────────
 const CARD_SIZES = {
+  createur:    [140, 210],
   gerant:      [160, 240],
   diplomate:   [130, 195],
   ambassadeur: [108, 162],
@@ -416,6 +419,7 @@ function CosmicMembers({ members, onSelect }) {
     mouseY.set((e.clientY - r.top)  / r.height);
   }, [mouseX, mouseY]);
 
+  const createurs    = members.filter(m => categorize(m) === "createur");
   const gerants      = members.filter(m => categorize(m) === "gerant");
   const diplomates   = members.filter(m => categorize(m) === "diplomate");
   const ambassadeurs = members.filter(m => categorize(m) === "ambassadeur");
@@ -432,6 +436,19 @@ function CosmicMembers({ members, onSelect }) {
       <motion.div className="cs-layer" style={{ x: s1x, y: s1y }}>
         <StarField />
       </motion.div>
+
+      {/* Créateur — panel gauche fixe */}
+      {createurs.length > 0 && (
+        <motion.div
+          className="cs-createur-panel"
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <span className="cs-createur-label">Fondateur du site</span>
+          <DivinCard m={createurs[0]} tier="createur" delay={0.15} onSelect={onSelect} />
+        </motion.div>
+      )}
 
       {/* Cards — gentle parallax */}
       <motion.div className="cs-layer cs-layer-fg" style={{ x: s2x, y: s2y }}>

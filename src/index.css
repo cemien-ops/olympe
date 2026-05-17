@@ -3196,6 +3196,60 @@ a { text-decoration: none; color: inherit; }
   pointer-events: none;
 }
 
+/* ── Créateur panel (left) ── */
+.cs-createur-panel {
+  position: absolute;
+  left: 2.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  z-index: 10;
+}
+.cs-createur-panel::after {
+  content: "";
+  position: absolute;
+  right: -1.8rem;
+  top: 5%;
+  height: 90%;
+  width: 1px;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    rgba(200,180,232,0.35) 30%,
+    rgba(200,180,232,0.35) 70%,
+    transparent 100%
+  );
+}
+.cs-createur-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(200,180,232,0.65);
+  text-align: center;
+}
+.dv-card-createur {
+  border-color: rgba(200,180,232,0.45) !important;
+  background: linear-gradient(160deg, rgba(30,18,48,0.92) 0%, rgba(18,12,32,0.97) 100%) !important;
+}
+.dv-card-createur::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(200,180,232,0.06) 0%,
+    transparent 50%,
+    rgba(200,180,232,0.04) 100%
+  );
+  pointer-events: none;
+}
+@media (max-width: 1100px) {
+  .cs-createur-panel { display: none; }
+}
+
 /* ── Layout ── */
 .cs-layout {
   position: relative; z-index: 2;
