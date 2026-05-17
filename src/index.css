@@ -2873,9 +2873,9 @@ a { text-decoration: none; color: inherit; }
 }
 .payment-card:hover { background: rgba(201,162,39,0.1); border-color: rgba(201,162,39,0.3); }
 .payment-logo { font-size: 1.1rem; flex-shrink: 0; }
-.payment-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.payment-info { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .payment-name { font-size: 0.82rem; font-weight: 600; color: var(--text); }
-.payment-link { font-size: 0.7rem; color: var(--text-muted); }
+.payment-link { font-size: 0.7rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .payment-arrow { font-size: 0.82rem; color: var(--gold); flex-shrink: 0; }
 .payment-card.eth      { border-color: rgba(98,126,234,0.2); }
 .payment-card.eth:hover { border-color: rgba(98,126,234,0.5); background: rgba(98,126,234,0.08); }
@@ -3008,10 +3008,13 @@ a { text-decoration: none; color: inherit; }
   /* ── Home / Shop ── */
   .hero-title { font-size: 2rem; }
   .feat-grid { grid-template-columns: 1fr; gap: 0.75rem; }
-  .shop-header h1 { font-size: 1.6rem; }
-  .tabs { gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .shop { padding: 1rem 0.75rem 3rem; }
+  .shop-header { margin-bottom: 1.2rem; }
+  .shop-header h1 { font-size: 1.5rem; }
+  .shop-header p { font-size: 0.82rem; }
+  .tabs { gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; }
   .tabs::-webkit-scrollbar { display: none; }
-  .tab { padding: 8px 12px; font-size: 0.82rem; white-space: nowrap; }
+  .tab { padding: 7px 11px; font-size: 0.78rem; white-space: nowrap; flex-shrink: 0; }
   .perms-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
   .perm-card { padding: 0.85rem; }
   .abos-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }

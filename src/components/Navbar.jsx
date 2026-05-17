@@ -62,14 +62,10 @@ function EditProfileModal({ user, updateUser, onClose }) {
   const [pseudo,     setPseudo]     = useState(user.pseudo || "");
   const [avatarMode, setAvatarMode] = useState(() => {
     const av = user.avatar;
-    if (!av || typeof av !== "string") return "emoji";
-    if (av.startsWith("data:")) return "file";
-    if (av.startsWith("http"))  return "url";
-    return "emoji";
+    if (av?.startsWith("data:")) return "file";
+    if (av?.startsWith("http"))  return "url";
+    return "url";
   });
-  const [avatarEmoji, setAvatarEmoji] = useState(
-    (!user.avatar || (typeof user.avatar === "string" && !user.avatar.startsWith("data:") && !user.avatar.startsWith("http"))) ? (user.avatar || "⚡") : "⚡"
-  );
   const [avatarUrl,  setAvatarUrl]  = useState(typeof user.avatar === "string" && user.avatar.startsWith("http")  ? user.avatar : "");
   const [avatarData, setAvatarData] = useState(typeof user.avatar === "string" && user.avatar.startsWith("data:") ? user.avatar : "");
   const [msg, setMsg] = useState("");
@@ -78,9 +74,7 @@ function EditProfileModal({ user, updateUser, onClose }) {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!pseudo.trim()) { setMsg("Le pseudo ne peut pas être vide."); return; }
-    const finalAvatar = avatarMode === "emoji" ? (avatarEmoji || "⚡")
-                      : avatarMode === "url"   ? avatarUrl
-                      : avatarData || user.avatar;
+    const finalAvatar = avatarMode === "url" ? avatarUrl : avatarData || user.avatar;
     await updateUser(user.id, { pseudo: pseudo.trim(), avatar: finalAvatar });
     setOk(true);
     setTimeout(onClose, 1200);
@@ -96,13 +90,9 @@ function EditProfileModal({ user, updateUser, onClose }) {
           <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "0.6rem", width: "100%" }}>
             <input className="mh-input" placeholder="Pseudo" value={pseudo} onChange={e => setPseudo(e.target.value)} autoFocus />
             <div className="avatar-tabs" style={{ marginTop: "0.4rem" }}>
-              <button type="button" className={`avatar-tab ${avatarMode === "emoji" ? "active" : ""}`} onClick={() => setAvatarMode("emoji")}>Emoji</button>
               <button type="button" className={`avatar-tab ${avatarMode === "url"   ? "active" : ""}`} onClick={() => setAvatarMode("url")}>URL</button>
               <button type="button" className={`avatar-tab ${avatarMode === "file"  ? "active" : ""}`} onClick={() => setAvatarMode("file")}>Fichier</button>
             </div>
-            {avatarMode === "emoji" && (
-              <input className="mh-input" placeholder="Ex: ⚡ 👑 🏛️" value={avatarEmoji} onChange={e => setAvatarEmoji(e.target.value)} />
-            )}
             {avatarMode === "url" && (
               <input className="mh-input" placeholder="https://..." value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} />
             )}

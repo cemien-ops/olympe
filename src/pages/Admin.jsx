@@ -184,23 +184,19 @@ export default function Admin() {
     setEditCustomId(u.customId || "");
     setEditPassword("");
     const av = u.avatar;
-    if (!av || typeof av !== "string") {
-      setEditAvatarMode("emoji"); setEditAvatarEmoji("⚡"); setEditAvatarUrl(""); setEditAvatarData("");
-    } else if (av.startsWith("data:")) {
-      setEditAvatarMode("file"); setEditAvatarData(av); setEditAvatarEmoji(""); setEditAvatarUrl("");
-    } else if (av.startsWith("http")) {
-      setEditAvatarMode("url"); setEditAvatarUrl(av); setEditAvatarEmoji(""); setEditAvatarData("");
+    if (av?.startsWith("data:")) {
+      setEditAvatarMode("file"); setEditAvatarData(av); setEditAvatarUrl("");
+    } else if (av?.startsWith("http")) {
+      setEditAvatarMode("url"); setEditAvatarUrl(av); setEditAvatarData("");
     } else {
-      setEditAvatarMode("emoji"); setEditAvatarEmoji(av); setEditAvatarUrl(""); setEditAvatarData("");
+      setEditAvatarMode("url"); setEditAvatarUrl(""); setEditAvatarData("");
     }
     setEditAvatarFile(null);
   };
 
   const handleSaveEdit = async () => {
     const parrainArray = user?.id === "zeus-001" ? editParrainList : editUser.parrain;
-    const finalAvatar = editAvatarMode === "emoji" ? (editAvatarEmoji || "⚡")
-                      : editAvatarMode === "url"   ? editAvatarUrl
-                      : editAvatarData || editUser.avatar;
+    const finalAvatar = editAvatarMode === "url" ? editAvatarUrl : editAvatarData || editUser.avatar;
     const updates = {
       perms: editPerms, abonnement: editAbo || null, whitelist: editWL,
       parrain: parrainArray,
@@ -425,13 +421,9 @@ export default function Admin() {
                 <div className="avatar-input-section">
                   <label className="role-assign-title">⚡ AVATAR</label>
                   <div className="avatar-tabs">
-                    <button className={`avatar-tab ${avatarMode === "emoji" ? "active" : ""}`} onClick={() => setAvatarMode("emoji")} type="button">Emoji</button>
                     <button className={`avatar-tab ${avatarMode === "url" ? "active" : ""}`} onClick={() => setAvatarMode("url")} type="button">Lien URL</button>
                     <button className={`avatar-tab ${avatarMode === "file" ? "active" : ""}`} onClick={() => setAvatarMode("file")} type="button">Fichier</button>
                   </div>
-                  {avatarMode === "emoji" && (
-                    <input className="mh-input" placeholder="Ex: ⚡ 👑 🏛️" value={avatarEmoji} onChange={e => setAvatarEmoji(e.target.value)} />
-                  )}
                   {avatarMode === "url" && (
                     <input className="mh-input" placeholder="https://..." value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} />
                   )}
@@ -454,7 +446,6 @@ export default function Admin() {
                     </label>
                   )}
                   <div className="avatar-preview">
-                    {avatarMode === "emoji" && <span style={{ fontSize: "2.5rem" }}>{avatarEmoji || "⚡"}</span>}
                     {avatarMode === "url" && avatarUrl && <img src={avatarUrl} alt="" style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover" }} />}
                     {avatarMode === "file" && avatarData && <img src={avatarData} alt="" style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover" }} />}
                   </div>
@@ -525,9 +516,8 @@ export default function Admin() {
             <button className="modal-close" onClick={() => setEditUser(null)}>✕</button>
 
             <div className="edit-modal-avatar-preview">
-              {editAvatarMode === "emoji" && <span style={{ fontSize: "3rem" }}>{editAvatarEmoji || "⚡"}</span>}
-              {editAvatarMode === "url"   && editAvatarUrl  && <img src={editAvatarUrl}  alt="" style={{ width: "56px", height: "56px", borderRadius: "50%", objectFit: "cover" }} />}
-              {editAvatarMode === "file"  && editAvatarData && <img src={editAvatarData} alt="" style={{ width: "56px", height: "56px", borderRadius: "50%", objectFit: "cover" }} />}
+              {editAvatarMode === "url"  && editAvatarUrl  && <img src={editAvatarUrl}  alt="" style={{ width: "56px", height: "56px", borderRadius: "50%", objectFit: "cover" }} />}
+              {editAvatarMode === "file" && editAvatarData && <img src={editAvatarData} alt="" style={{ width: "56px", height: "56px", borderRadius: "50%", objectFit: "cover" }} />}
             </div>
 
             <h3 style={{ color: "#F5EDD8", fontFamily: "'Cinzel', serif", marginBottom: "1rem" }}>
@@ -546,13 +536,9 @@ export default function Admin() {
             <div className="edit-section">
               <label className="role-assign-title">🖼️ AVATAR</label>
               <div className="avatar-tabs">
-                <button type="button" className={`avatar-tab ${editAvatarMode === "emoji" ? "active" : ""}`} onClick={() => setEditAvatarMode("emoji")}>Emoji</button>
                 <button type="button" className={`avatar-tab ${editAvatarMode === "url"   ? "active" : ""}`} onClick={() => setEditAvatarMode("url")}>URL</button>
                 <button type="button" className={`avatar-tab ${editAvatarMode === "file"  ? "active" : ""}`} onClick={() => setEditAvatarMode("file")}>Fichier</button>
               </div>
-              {editAvatarMode === "emoji" && (
-                <input className="mh-input" placeholder="Ex: ⚡ 👑 🏛️" value={editAvatarEmoji} onChange={e => setEditAvatarEmoji(e.target.value)} />
-              )}
               {editAvatarMode === "url" && (
                 <input className="mh-input" placeholder="https://..." value={editAvatarUrl} onChange={e => setEditAvatarUrl(e.target.value)} />
               )}
