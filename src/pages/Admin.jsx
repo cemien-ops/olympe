@@ -213,9 +213,10 @@ export default function Admin() {
     setEditUser(null);
   };
 
-  const TIER_RANK = { "Gérant": 0, "Diplomate": 1, "Ambassadeur": 2 };
+  const TIER_RANK = { "Gérant": 0, "Fondateur": 1, "Diplomate": 2, "Ambassadeur": 3 };
   const TIER_STYLE = {
     "Gérant":      { label: "Gérant",      col: "#C9A227", bg: "rgba(201,162,39,0.15)"  },
+    "Fondateur":   { label: "Fondateur",   col: "#C8B4E8", bg: "rgba(200,180,232,0.15)" },
     "Diplomate":   { label: "Diplomate",   col: "#8BA3C7", bg: "rgba(139,163,199,0.15)" },
     "Ambassadeur": { label: "Ambassadeur", col: "#CD7F32", bg: "rgba(205,127,50,0.15)"  },
     "Membre":      { label: "Membre",      col: "#8A7A58", bg: "rgba(138,122,88,0.12)"  },
@@ -223,6 +224,7 @@ export default function Admin() {
 
   const getUserTier = (u) => {
     if (u.perms?.includes("Gérant"))      return "Gérant";
+    if (u.perms?.includes("Créateur"))    return "Fondateur";
     if (u.perms?.includes("Diplomate"))   return "Diplomate";
     if (u.perms?.includes("Ambassadeur")) return "Ambassadeur";
     return "Membre";

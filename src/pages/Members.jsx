@@ -419,11 +419,11 @@ function CosmicMembers({ members, onSelect }) {
     mouseY.set((e.clientY - r.top)  / r.height);
   }, [mouseX, mouseY]);
 
-  const createurs    = members.filter(m => categorize(m) === "createur");
+  const fondateur    = members.find(m => categorize(m) === "createur") || null;
   const gerants      = members.filter(m => categorize(m) === "gerant");
   const diplomates   = members.filter(m => categorize(m) === "diplomate");
   const ambassadeurs = members.filter(m => categorize(m) === "ambassadeur");
-  const regular      = members.filter(m => categorize(m) === "membre");
+  const regular      = members.filter(m => categorize(m) === "membre" || (categorize(m) === "createur" && m !== fondateur));
   const dipRow = [...diplomates,   ...Array(Math.max(0, 2 - diplomates.length)).fill(null)];
   const ambRow = [...ambassadeurs, ...Array(Math.max(0, 10 - ambassadeurs.length)).fill(null)];
 
@@ -437,19 +437,6 @@ function CosmicMembers({ members, onSelect }) {
         <StarField />
       </motion.div>
 
-      {/* Créateur — panel gauche fixe */}
-      {createurs.length > 0 && (
-        <motion.div
-          className="cs-createur-panel"
-          initial={{ opacity: 0, x: -40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <span className="cs-createur-label">Fondateur du site</span>
-          <DivinCard m={createurs[0]} tier="createur" delay={0.15} onSelect={onSelect} />
-        </motion.div>
-      )}
-
       {/* Cards — gentle parallax */}
       <motion.div className="cs-layer cs-layer-fg" style={{ x: s2x, y: s2y }}>
         <div className="cs-layout">
@@ -461,10 +448,23 @@ function CosmicMembers({ members, onSelect }) {
             <p className="cs-sub">Les divinités de l'Olympe</p>
           </motion.div>
 
-          <div className="cs-row cs-row-g">
-            {gerants.length > 0
-              ? gerants.map((m, i) => <DivinCard key={m.pseudo} m={m} tier="gerant" delay={0.1 + i * 0.1} onSelect={onSelect} />)
-              : <DivinCard m={null} tier="gerant" delay={0.1} onSelect={onSelect} />}
+          <div className="cs-row-g-container">
+            {fondateur && (
+              <motion.div
+                className="cs-fondateur-side"
+                initial={{ opacity: 0, x: -40 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <span className="cs-createur-label">Fondateur du site</span>
+                <DivinCard m={fondateur} tier="createur" delay={0.15} onSelect={onSelect} />
+              </motion.div>
+            )}
+            <div className="cs-row cs-row-g">
+              {gerants.length > 0
+                ? gerants.map((m, i) => <DivinCard key={m.pseudo} m={m} tier="gerant" delay={0.1 + i * 0.1} onSelect={onSelect} />)
+                : <DivinCard m={null} tier="gerant" delay={0.1} onSelect={onSelect} />}
+            </div>
           </div>
 
           <div className="cs-row cs-row-d">

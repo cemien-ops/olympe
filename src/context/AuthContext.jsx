@@ -126,7 +126,9 @@ export function AuthProvider({ children }) {
   // ── Heartbeat last_seen ───────────────────────────────────────────────────
   useEffect(() => {
     if (!user?.id || !supabase) return;
-    const beat = () => supabase.from("users").update({ last_seen: new Date().toISOString() }).eq("id", user.id);
+    const beat = async () => {
+      await supabase.from("users").update({ last_seen: new Date().toISOString() }).eq("id", user.id);
+    };
     beat();
     const t = setInterval(beat, 60_000);
     return () => clearInterval(t);
