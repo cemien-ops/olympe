@@ -105,7 +105,7 @@ export function AuthProvider({ children }) {
       const [{ data: ud }, { data: md }, ordRes] = await Promise.all([
         supabase.from("users").select("*"),
         supabase.from("messages").select("*"),
-        supabase.from("orders").select("*").catch(() => ({ data: [] })),
+        Promise.resolve(supabase.from("orders").select("*")).catch(() => ({ data: [] })),
       ]);
       const nu = (ud || []).map(normalizeUser);
       const nm = (md || []).map(normalizeMsg);
