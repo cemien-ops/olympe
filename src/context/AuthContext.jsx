@@ -198,6 +198,16 @@ export function AuthProvider({ children }) {
     saveUsers(loadUsers().filter(u => u.id !== id));
   };
 
+  const changePassword = async (currentPassword, newPassword) => {
+    const currentHash = await sha256(currentPassword);
+    const allUsers = loadUsers();
+    const u = allUsers.find(u => u.id === user?.id);
+    if (!u || u.password !== currentHash) return false;
+    const newHash = await sha256(newPassword);
+    saveUsers(allUsers.map(u => u.id === user.id ? { ...u, password: newHash } : u));
+    return true;
+  };
+
   const updateUser = (id, data) => {
     const updated = loadUsers().map(u => u.id === id ? { ...u, ...data } : u);
     saveUsers(updated);
@@ -308,7 +318,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       user, users, members,
       login, logout, createUser, deleteUser, updateUser,
-      sendMessage, getMessages, getUnreadCount, markRead, markAllRead, markEverythingRead,
+      sendMessage, getMessages, getUnreadCount, markRead, markAllRead, markEverythingRead, changePassword,
       deleteProfile, updatePossessions,
     }}>
       {children}

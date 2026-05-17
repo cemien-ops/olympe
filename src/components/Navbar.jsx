@@ -4,6 +4,47 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 
+function ChangePasswordModal({ onClose, changePassword }) {
+  const [current, setCurrent] = useState("");
+  const [next,    setNext]    = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [msg,     setMsg]     = useState("");
+  const [ok,      setOk]      = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!current || !next) { setMsg("Remplis tous les champs."); return; }
+    if (next !== confirm)  { setMsg("Les mots de passe ne correspondent pas."); return; }
+    if (next.length < 4)   { setMsg("Minimum 4 caractères."); return; }
+    const success = await changePassword(current, next);
+    if (!success) { setMsg("Mot de passe actuel incorrect."); return; }
+    setOk(true);
+    setTimeout(onClose, 1400);
+  };
+
+  return (
+    <div className="confirm-overlay" onClick={onClose}>
+      <div className="confirm-modal pw-modal" onClick={e => e.stopPropagation()}>
+        <div className="confirm-message" style={{ marginBottom: "1rem" }}>🔑 Changer le mot de passe</div>
+        {ok ? (
+          <div style={{ color: "#4ade80", fontFamily: "'Cinzel',serif", fontSize: "0.88rem" }}>✓ Mot de passe modifié !</div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.6rem", width: "100%" }}>
+            <input className="mh-input" type="password" placeholder="Mot de passe actuel" value={current} onChange={e => setCurrent(e.target.value)} autoFocus />
+            <input className="mh-input" type="password" placeholder="Nouveau mot de passe" value={next} onChange={e => setNext(e.target.value)} />
+            <input className="mh-input" type="password" placeholder="Confirmer" value={confirm} onChange={e => setConfirm(e.target.value)} />
+            {msg && <div style={{ color: "#e07070", fontSize: "0.78rem", textAlign: "center" }}>{msg}</div>}
+            <div className="confirm-actions" style={{ marginTop: "0.4rem" }}>
+              <button type="button" className="confirm-btn-cancel" onClick={onClose}>Annuler</button>
+              <button type="submit" className="confirm-btn-ok" style={{ background: "rgba(201,162,39,0.2)", borderColor: "rgba(201,162,39,0.5)", color: "#F0D878" }}>Confirmer</button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const linkVariants = {
   hidden:  { opacity: 0, y: -8 },
   visible: { opacity: 1, y: 0 },
@@ -17,8 +58,9 @@ function renderAvatar(avatar, size = "24px") {
   return avatar;
 }
 
-function UserDropdown({ user, logout, deleteProfile }) {
+function UserDropdown({ user, logout, deleteProfile, changePassword }) {
   const [open, setOpen] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -88,6 +130,9 @@ function UserDropdown({ user, logout, deleteProfile }) {
 
           <hr className="dropdown-divider" />
 
+          <button className="dropdown-pw" onClick={() => { setShowPw(true); setOpen(false); }}>
+            🔑 Changer le mot de passe
+          </button>
           {user.id !== "zeus-001" && (
             <button className="dropdown-delete" onClick={handleDelete}>
               🗑️ Supprimer mon profil
@@ -98,13 +143,20 @@ function UserDropdown({ user, logout, deleteProfile }) {
           </button>
         </div>
       )}
+
+      {showPw && (
+        <ChangePasswordModal
+          onClose={() => setShowPw(false)}
+          changePassword={changePassword}
+        />
+      )}
     </div>
   );
 }
 
 export default function Navbar() {
   const { items, setOpen } = useCart();
-  const { user, logout, deleteProfile, getUnreadCount } = useAuth();
+  const { user, logout, deleteProfile, getUnreadCount, changePassword } = useAuth();
   const location  = useLocation();
   const navigate  = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -208,7 +260,7 @@ export default function Navbar() {
         transition={{ delay: 0.4, duration: 0.4 }}
       >
         {user ? (
-          <UserDropdown user={user} logout={logout} deleteProfile={deleteProfile} />
+          <UserDropdown user={user} logout={logout} deleteProfile={deleteProfile} changePassword={changePassword} />
         ) : (
           <Link to="/auth" className="btn-ghost">Connexion</Link>
         )}
