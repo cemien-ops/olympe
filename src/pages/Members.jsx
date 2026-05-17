@@ -41,16 +41,15 @@ function PantheonEntrance({ onComplete }) {
   useEffect(() => {
     const seq = async () => {
       try {
-        animate(".pe-sub-greek",
-          { opacity: 1, y: 0 },
-          { duration: 0.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }
-        );
         await animate(".pe-greek",
           { opacity: 1, y: 0, filter: "blur(0px)" },
-          { duration: 1.1, delay: 0.35, ease: [0.16, 1, 0.3, 1] }
+          { duration: 1.1, delay: 0.25, ease: [0.16, 1, 0.3, 1] }
         );
+        animate(".pe-line",  { opacity: 0.85, scaleX: 1 }, { duration: 0.45 });
+        await animate(".pe-sub",  { opacity: 0.9, y: 0 },  { duration: 0.5 });
+        await animate(".pe-tagline", { opacity: 0.55 },     { duration: 0.4 });
 
-        await new Promise(r => setTimeout(r, 520));
+        await new Promise(r => setTimeout(r, 380));
 
         await animate(".pe-flash",
           { opacity: [0, 0.92, 0, 0.78, 0, 0.48, 0] },
@@ -59,11 +58,12 @@ function PantheonEntrance({ onComplete }) {
 
         await new Promise(r => setTimeout(r, 200));
 
-        animate(".pe-bloom",  { opacity: 1 },      { duration: 0.35 });
-        animate(".pe-door-l", { x: "-100%" },      { duration: 1.2, ease: [0.22, 1, 0.36, 1] });
-        await animate(".pe-door-r", { x: "100%" }, { duration: 1.2, ease: [0.22, 1, 0.36, 1] });
+        animate(".pe-bloom",  { opacity: 1 },     { duration: 0.35 });
+        animate(".pe-door-l", { x: "-100%" },     { duration: 1.2, ease: [0.22, 1, 0.36, 1] });
+        await animate(".pe-door-r", { x: "100%" },{ duration: 1.2, ease: [0.22, 1, 0.36, 1] });
 
         animate(".pe-title-wrap", { opacity: 0 }, { duration: 0.45 });
+        animate(".pe-cols",       { opacity: 0 }, { duration: 0.5 });
         await animate(".pe-bloom", { opacity: 0 }, { duration: 0.9, ease: "easeInOut" });
 
         finish();
@@ -81,11 +81,29 @@ function PantheonEntrance({ onComplete }) {
       onClick={finish}
     >
       <div className="pe-bg" />
+      <div className="pe-torch pe-torch-l" />
+      <div className="pe-torch pe-torch-r" />
+
+      <div className="pe-cols">
+        <div className="pe-col pe-col-l">
+          <div className="pe-cap" /><div className="pe-shaft" /><div className="pe-base" />
+        </div>
+        <div className="pe-col pe-col-r">
+          <div className="pe-cap" /><div className="pe-shaft" /><div className="pe-base" />
+        </div>
+      </div>
 
       <div className="pe-door pe-door-l">
+        <div className="pe-door-face">
+          <div className="pe-panel" /><div className="pe-panel" /><div className="pe-panel" />
+        </div>
         <div className="pe-handle" />
       </div>
+
       <div className="pe-door pe-door-r">
+        <div className="pe-door-face">
+          <div className="pe-panel" /><div className="pe-panel" /><div className="pe-panel" />
+        </div>
         <div className="pe-medallion">⚡</div>
         <div className="pe-handle" />
       </div>
@@ -93,8 +111,10 @@ function PantheonEntrance({ onComplete }) {
       <div className="pe-bloom" />
 
       <div className="pe-title-wrap">
-        <div className="pe-sub-greek">Ὄλυμπος</div>
-        <div className="pe-greek">OLYMPE</div>
+        <div className="pe-greek">ὌΛΥΜΠΟΣ</div>
+        <div className="pe-line" />
+        <div className="pe-sub">L'Enceinte Olympienne</div>
+        <div className="pe-tagline">Seuls les élus franchissent ces portes</div>
       </div>
 
       <div className="pe-flash" />
