@@ -38,10 +38,8 @@ const normalizeMsg = (m) => {
   };
 };
 
-async function seedIfEmpty() {
+async function seedDefaults() {
   if (!supabase) return;
-  const { data: existing } = await supabase.from("users").select("id").limit(1);
-  if (existing && existing.length > 0) return;
 
   const hashKraken = await sha256("Kraken");
   const pw         = await sha256("olympe");
@@ -52,26 +50,33 @@ async function seedIfEmpty() {
   const avAmb = (bg) => mkAv(bg, "%3Crect x='30' y='30' width='40' height='40' rx='4' fill='%23CD7F32' opacity='0.6' transform='rotate(45 50 50)'/%3E");
   const avMbr = (bg) => mkAv(bg, "%3Crect x='32' y='32' width='36' height='36' rx='3' fill='none' stroke='%23C9A227' stroke-width='3' opacity='0.65' transform='rotate(45 50 50)'/%3E%3Ccircle cx='50' cy='50' r='6' fill='%23C9A227' opacity='0.5'/%3E");
 
-  await supabase.from("users").insert([
-    { id: "zeus-001",          pseudo: "Kraken",     password: hashKraken, is_admin: true,  faction: "olympe", avatar: "https://i.imgur.com/QtQ2XUJ.jpg", perms: ["Gérant", "Couronne"], abonnement: null, whitelist: [] },
-    { id: "user-hermes",       pseudo: "Hermès",     password: pw,         is_admin: false, faction: "olympe", avatar: avDip("#0a1825"), perms: ["Diplomate"],   abonnement: "GOLD",   whitelist: [] },
-    { id: "user-athena",       pseudo: "Athéna",     password: pw,         is_admin: false, faction: "olympe", avatar: avDip("#0d1220"), perms: ["Diplomate"],   abonnement: "SILVER", whitelist: [] },
-    { id: "user-poseidon",     pseudo: "Poséidon",   password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#071520"), perms: ["Ambassadeur"], abonnement: null,     whitelist: ["Elysée"] },
-    { id: "user-ares",         pseudo: "Arès",       password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#1a0808"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
-    { id: "user-apollon",      pseudo: "Apollon",    password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#1a1208"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
-    { id: "user-artemis",      pseudo: "Artémis",    password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#080f1a"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
-    { id: "user-hephaistos",   pseudo: "Héphaïstos", password: pw,         is_admin: false, faction: "olympe", avatar: avMbr("#120e08"), perms: [],             abonnement: null,     whitelist: [] },
-    { id: "user-dionysos",     pseudo: "Dionysos",   password: pw,         is_admin: false, faction: "olympe", avatar: avMbr("#0e0812"), perms: [],             abonnement: null,     whitelist: [] },
-    { id: "user-hades",        pseudo: "Hadès",      password: pw,         is_admin: false, faction: "olympe", avatar: avMbr("#08080e"), perms: [],             abonnement: null,     whitelist: [] },
-  ]);
+  // upsert: insert new rows, skip if id already exists
+  await supabase.from("users").upsert([
+    { id: "zeus-001",        pseudo: "Kraken",      password: hashKraken, is_admin: true,  faction: "olympe", avatar: "https://i.imgur.com/QtQ2XUJ.jpg", perms: ["Gérant", "Couronne"], abonnement: null,     whitelist: [] },
+    { id: "user-hermes",     pseudo: "Hermès",      password: pw,         is_admin: false, faction: "olympe", avatar: avDip("#0a1825"), perms: ["Diplomate"],   abonnement: "GOLD",   whitelist: [] },
+    { id: "user-athena",     pseudo: "Athéna",      password: pw,         is_admin: false, faction: "olympe", avatar: avDip("#0d1220"), perms: ["Diplomate"],   abonnement: "SILVER", whitelist: [] },
+    { id: "user-poseidon",   pseudo: "Poséidon",    password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#071520"), perms: ["Ambassadeur"], abonnement: null,     whitelist: ["Elysée"] },
+    { id: "user-ares",       pseudo: "Arès",        password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#1a0808"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-apollon",    pseudo: "Apollon",     password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#1a1208"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-artemis",    pseudo: "Artémis",     password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#080f1a"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-hera",       pseudo: "Héra",        password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#1a0818"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-demeter",    pseudo: "Déméter",     password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#0d1a08"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-hestia",     pseudo: "Hestia",      password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#1a0e08"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-persephone", pseudo: "Perséphone",  password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#0e081a"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-hecate",     pseudo: "Hécate",      password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#08081a"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-hypnos",     pseudo: "Hypnos",      password: pw,         is_admin: false, faction: "olympe", avatar: avAmb("#080d18"), perms: ["Ambassadeur"], abonnement: null,     whitelist: [] },
+    { id: "user-hephaistos", pseudo: "Héphaïstos",  password: pw,         is_admin: false, faction: "olympe", avatar: avMbr("#120e08"), perms: [],             abonnement: null,     whitelist: [] },
+    { id: "user-dionysos",   pseudo: "Dionysos",    password: pw,         is_admin: false, faction: "olympe", avatar: avMbr("#0e0812"), perms: [],             abonnement: null,     whitelist: [] },
+    { id: "user-hades",      pseudo: "Hadès",       password: pw,         is_admin: false, faction: "olympe", avatar: avMbr("#08080e"), perms: [],             abonnement: null,     whitelist: [] },
+  ], { onConflict: "id", ignoreDuplicates: true });
 
-  await supabase.from("messages").insert([{
+  await supabase.from("messages").upsert([{
     id: "welcome-kraken",
     from_id: "system", from_pseudo: "Système",
     to_id: "zeus-001", to_pseudo: "Kraken",
     content: "Bienvenue, Seigneur de l'Olympe. Le site est opérationnel.",
     date: new Date().toISOString(), read: true,
-  }]);
+  }], { onConflict: "id", ignoreDuplicates: true });
 }
 
 export function AuthProvider({ children }) {
@@ -86,7 +91,7 @@ export function AuthProvider({ children }) {
       return;
     }
     (async () => {
-      await seedIfEmpty();
+      await seedDefaults();
       const [{ data: ud }, { data: md }] = await Promise.all([
         supabase.from("users").select("*"),
         supabase.from("messages").select("*"),
