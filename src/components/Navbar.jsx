@@ -282,7 +282,7 @@ export default function Navbar() {
               to="/messages"
               className={`nav-link ${location.pathname === "/messages" ? "active" : ""}`}
             >
-              ✉️ Messages
+              Messages
               {unread > 0 && <span className="msg-badge">{unread}</span>}
             </Link>
           </motion.div>
@@ -338,7 +338,7 @@ export default function Navbar() {
             <button onClick={() => { goto("members");  setMenuOpen(false); }}>Membres</button>
             {user && (
               <button onClick={() => { goto("messages"); setMenuOpen(false); }}>
-                ✉️ Messages {unread > 0 && `(${unread})`}
+                Messages {unread > 0 && `(${unread})`}
               </button>
             )}
             {user?.isAdmin && (

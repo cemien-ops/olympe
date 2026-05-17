@@ -15,7 +15,7 @@ const TIERS = {
 };
 
 function categorize(m) {
-  if (m.perms?.includes("Créateur"))    return "createur";
+  if (m.pseudo === "Chaos")             return "createur";
   if (m.perms?.includes("Gérant"))      return "gerant";
   if (m.perms?.includes("Diplomate"))   return "diplomate";
   if (m.perms?.includes("Ambassadeur")) return "ambassadeur";

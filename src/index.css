@@ -2300,6 +2300,19 @@ a { text-decoration: none; color: inherit; }
 .admin-action-btn.edit { background: rgba(201,162,39,.2); color: var(--gold); border: 1px solid rgba(201,162,39,.3); }
 .admin-action-btn.toggle-admin { background: rgba(201,162,39,.15); color: var(--gold-l); border: 1px solid rgba(201,162,39,.25); }
 .admin-action-btn.delete { background: rgba(244,63,94,.18); color: #fb7185; border: 1px solid rgba(244,63,94,.25); }
+.tier-select-inline {
+  background: rgba(139,163,199,0.12);
+  border: 1px solid rgba(139,163,199,0.3);
+  color: #8BA3C7;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-family: 'Cinzel', serif;
+  cursor: pointer;
+  outline: none;
+  transition: 0.2s;
+}
+.tier-select-inline:hover { background: rgba(139,163,199,0.2); }
 
 .admin-btn { border: none; border-radius: 8px; padding: 0.4rem 0.8rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: opacity 0.18s, transform 0.1s; }
 .admin-btn:hover { opacity: 0.85; transform: translateY(-1px); }

@@ -209,7 +209,7 @@ export default function Admin() {
     setEditUser(null);
   };
 
-  const TIER_RANK = { "Gérant": 0, "Fondateur": 1, "Diplomate": 2, "Ambassadeur": 3 };
+  const TIER_RANK = { "Gérant": 0, "Fondateur": 1, "Diplomate": 2, "Ambassadeur": 3, "Membre": 4 };
   const TIER_STYLE = {
     "Gérant":      { label: "Gérant",      col: "#C9A227", bg: "rgba(201,162,39,0.15)"  },
     "Fondateur":   { label: "Fondateur",   col: "#C8B4E8", bg: "rgba(200,180,232,0.15)" },
@@ -219,11 +219,19 @@ export default function Admin() {
   };
 
   const getUserTier = (u) => {
+    if (u.id === "zeus-001")              return "Gérant";
+    if (u.pseudo === "Chaos")             return "Fondateur";
     if (u.perms?.includes("Gérant"))      return "Gérant";
-    if (u.perms?.includes("Créateur"))    return "Fondateur";
     if (u.perms?.includes("Diplomate"))   return "Diplomate";
     if (u.perms?.includes("Ambassadeur")) return "Ambassadeur";
     return "Membre";
+  };
+
+  const handleQuickTier = (u, newTier) => {
+    const tierPerms = ["Gérant", "Diplomate", "Ambassadeur"];
+    const kept = (u.perms || []).filter(p => !tierPerms.includes(p));
+    const newPerms = newTier === "Membre" ? kept : [...kept, newTier];
+    updateUser(u.id, { perms: newPerms });
   };
 
   const PERM_PRICES = {
@@ -360,8 +368,19 @@ export default function Admin() {
                   </td>
                   <td className="admin-actions">
                     <button className="admin-action-btn edit" onClick={() => openEditModal(u)}>✏️ Modifier</button>
-                    {u.id !== "zeus-001" && u.id !== "cronos-001" && (
+                    {u.id !== "zeus-001" && u.id !== "cronos-001" && u.pseudo !== "Chaos" && (
                       <>
+                        {user?.id === "zeus-001" && (
+                          <select
+                            className="tier-select-inline"
+                            value={getUserTier(u) === "Fondateur" ? "Membre" : getUserTier(u)}
+                            onChange={e => handleQuickTier(u, e.target.value)}
+                          >
+                            <option value="Membre">Membre</option>
+                            <option value="Ambassadeur">Ambassadeur</option>
+                            <option value="Diplomate">Diplomate</option>
+                          </select>
+                        )}
                         <button
                           className="admin-action-btn toggle-admin"
                           onClick={() => toggleAdmin(u)}
@@ -376,7 +395,7 @@ export default function Admin() {
                         </button>
                       </>
                     )}
-                    {(u.id === "zeus-001" || u.id === "cronos-001") && <span style={{ color: "#7A6A50", fontSize: "0.8rem" }}>Protégé</span>}
+                    {(u.id === "zeus-001" || u.id === "cronos-001" || u.pseudo === "Chaos") && <span style={{ color: "#7A6A50", fontSize: "0.8rem" }}>Protégé</span>}
                   </td>
                 </tr>
               ); })}
