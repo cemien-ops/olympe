@@ -238,6 +238,7 @@ a { text-decoration: none; color: inherit; }
 .dropdown-delete { color: #ff8080 !important; }
 .dropdown-delete:hover { background: rgba(255,80,80,0.15) !important; border-color: rgba(255,80,80,0.3) !important; }
 .dropdown-logout { color: rgba(240,200,120,0.8) !important; }
+.dropdown-pw { color: rgba(180,160,220,0.85) !important; }
 
 .tag { font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
 .tag-perm { background: rgba(201,162,39,0.15); border: 1px solid rgba(201,162,39,0.4); color: var(--gold-l); }
