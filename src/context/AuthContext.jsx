@@ -115,7 +115,10 @@ export function AuthProvider({ children }) {
       const sessionId = localStorage.getItem(SESSION_KEY);
       if (sessionId) {
         const u = nu.find(u => u.id === sessionId);
-        if (u) setUser(u);
+        if (u) {
+          setUser(u);
+          supabase.from("users").update({ last_seen: new Date().toISOString() }).eq("id", u.id);
+        }
       }
     })();
   }, []);
@@ -186,6 +189,7 @@ export function AuthProvider({ children }) {
     const u = normalizeUser(data);
     setUser(u);
     localStorage.setItem(SESSION_KEY, u.id);
+    await supabase.from("users").update({ last_seen: new Date().toISOString() }).eq("id", u.id);
     setTimeout(async () => {
       try {
         const osId = await requestPermission();
@@ -195,7 +199,10 @@ export function AuthProvider({ children }) {
     return true;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (user && supabase) {
+      await supabase.from("users").update({ last_seen: null }).eq("id", user.id);
+    }
     setUser(null);
     localStorage.removeItem(SESSION_KEY);
   };
