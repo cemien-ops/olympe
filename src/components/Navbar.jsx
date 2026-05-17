@@ -156,22 +156,15 @@ function UserDropdown({ user, logout, deleteProfile, changePassword }) {
 
 export default function Navbar() {
   const { items, setOpen } = useCart();
-  const { user, logout, deleteProfile, getUnreadCount, changePassword } = useAuth();
+  const { user, logout, deleteProfile, unreadCount, changePassword } = useAuth();
   const location  = useLocation();
   const navigate  = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [unread,   setUnread]   = useState(0);
+  const unread = unreadCount ?? 0;
 
   useEffect(() => {
     document.body.setAttribute("data-faction", user?.faction || "olympe");
   }, [user]);
-
-  useEffect(() => {
-    const refresh = () => setUnread(getUnreadCount ? getUnreadCount() : 0);
-    refresh();
-    const interval = setInterval(refresh, 3000);
-    return () => clearInterval(interval);
-  }, [user, getUnreadCount]);
 
   const goto = (path) => navigate("/" + (path === "home" ? "" : path));
 

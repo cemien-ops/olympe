@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { requestPermission } from "../onesignal";
 import { supabase } from "../supabase";
 
@@ -355,13 +355,18 @@ export function AuthProvider({ children }) {
     );
   }, [msgs, user]);
 
-  const getUnreadCount = useCallback(() => {
+  const unreadCount = useMemo(() => {
     if (!user) return 0;
-    return getMessages().filter(m => {
+    return msgs.filter(m => {
+      const mine = m.toId === user.id || m.fromId === user.id ||
+        (m.isGroup && Array.isArray(m.participantIds) && m.participantIds.includes(user.id));
+      if (!mine) return false;
       if (m.isGroup) return m.fromId !== user.id && !m.readBy?.includes(user.id);
       return !m.read && m.toId === user.id && m.fromId !== "system";
     }).length;
-  }, [getMessages, user]);
+  }, [msgs, user]);
+
+  const getUnreadCount = useCallback(() => unreadCount, [unreadCount]);
 
   const members = users.map(u => ({
     pseudo:     u.pseudo,
@@ -392,7 +397,7 @@ export function AuthProvider({ children }) {
       login, logout, createUser, deleteUser, updateUser, changePassword,
       sendMessage, sendGroupMessage, createGroupConv, addUserToGroup,
       saveGroupNameDB, deleteConversationDB, markGroupRead,
-      getMessages, getUnreadCount, markRead, markAllRead, markEverythingRead,
+      getMessages, getUnreadCount, unreadCount, markRead, markAllRead, markEverythingRead,
       deleteProfile, updatePossessions,
     }}>
       {children}
