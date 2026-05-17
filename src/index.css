@@ -2242,11 +2242,10 @@ a { text-decoration: none; color: inherit; }
   border-bottom: 1px solid rgba(201,162,39,0.1);
   font-family: 'Cinzel', serif;
 }
-.admin-row td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(201,162,39,0.06); vertical-align: middle; }
+.admin-row { transition: background 0.15s; }
+.admin-row td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(201,162,39,0.06); vertical-align: middle; background: transparent; }
 .admin-row:last-child td { border-bottom: none; }
-.admin-row:hover td { background: rgba(201,162,39,0.08); }
-.admin-row:hover td:first-child { border-radius: 8px 0 0 8px; }
-.admin-row:hover td:last-child  { border-radius: 0 8px 8px 0; }
+.admin-row:hover { background: rgba(201,162,39,0.11); }
 .admin-pseudo { font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
 
 .admin-tier-badge {
