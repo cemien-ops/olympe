@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import CoinIcon from "./CoinIcon";
@@ -5,11 +6,17 @@ import CoinIcon from "./CoinIcon";
 export default function Cart() {
   const { items, remove, clear, total, open, setOpen } = useCart();
   const { user, users, sendGroupMessage } = useAuth();
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => { setToast(null); setOpen(false); }, 2200);
+  };
 
   if (!open) return null;
 
   const handleCheckout = async () => {
-    if (!user) { alert("Connecte-toi pour passer commande !"); return; }
+    if (!user) { showToast("⚠️ Connecte-toi pour passer commande !"); return; }
 
     const parrainRefs = Array.isArray(user.parrain)
       ? user.parrain
@@ -65,12 +72,16 @@ export default function Cart() {
     localStorage.setItem("mh_orders", JSON.stringify([...orders, order]));
 
     clear();
-    setOpen(false);
-    alert("✅ Commande envoyée ! Kraken a été notifié ⚡");
+    showToast("✅ Commande envoyée ! Kraken a été notifié ⚡");
   };
 
   return (
     <>
+      {toast && (
+        <div className="cart-toast">
+          {toast}
+        </div>
+      )}
       <div className="cart-overlay" onClick={() => setOpen(false)} />
       <aside className="cart-panel">
         <div className="cart-header">
