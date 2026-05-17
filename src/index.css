@@ -2865,6 +2865,16 @@ a { text-decoration: none; color: inherit; }
 .payment-name { font-size: 0.82rem; font-weight: 600; color: var(--text); }
 .payment-link { font-size: 0.7rem; color: var(--text-muted); }
 .payment-arrow { font-size: 0.82rem; color: var(--gold); flex-shrink: 0; }
+.payment-card.eth      { border-color: rgba(98,126,234,0.2); }
+.payment-card.eth:hover { border-color: rgba(98,126,234,0.5); background: rgba(98,126,234,0.08); }
+.payment-card.sol      { border-color: rgba(153,69,255,0.2); }
+.payment-card.sol:hover { border-color: rgba(153,69,255,0.5); background: rgba(153,69,255,0.08); }
+.payment-card.usdt-trc, .payment-card.usdt-eth { border-color: rgba(38,161,123,0.2); }
+.payment-card.usdt-trc:hover, .payment-card.usdt-eth:hover { border-color: rgba(38,161,123,0.5); background: rgba(38,161,123,0.08); }
+.payment-card.usdc-eth { border-color: rgba(39,117,202,0.2); }
+.payment-card.usdc-eth:hover { border-color: rgba(39,117,202,0.5); background: rgba(39,117,202,0.08); }
+.payment-card.paysafe  { border-color: rgba(220,30,30,0.2); }
+.payment-card.paysafe:hover { border-color: rgba(220,30,30,0.5); background: rgba(220,30,30,0.08); }
 .payment-toggle {
   padding: 0.55rem 1rem;
   border-top: 1px solid rgba(201,162,39,0.1);

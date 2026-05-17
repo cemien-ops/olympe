@@ -312,30 +312,55 @@ export default function Messages() {
     <div className="payment-panel">
       <h3 className="payment-title">💳 Moyens de paiement</h3>
       <div className="payment-methods">
-        <button className="payment-card revolut" onClick={() => handleCopy("https://revolut.me/suururugi", "revolut")}>
-          <div className="payment-logo">💙</div>
-          <div className="payment-info"><span className="payment-name">Revolut</span><span className="payment-link">revolut.me/suururugi</span></div>
-          <span className="payment-arrow">{copied === "revolut" ? "✓ Copié" : "📋"}</span>
-        </button>
-        <button className="payment-card paypal" onClick={() => handleCopy("https://www.paypal.me/darkvadorducss", "paypal")}>
+        <button className="payment-card paypal" onClick={() => handleCopy("https://www.paypal.me/FlorianLefel", "paypal")}>
           <div className="payment-logo">🅿️</div>
-          <div className="payment-info"><span className="payment-name">PayPal</span><span className="payment-link">paypal.me/darkvadorducss</span></div>
+          <div className="payment-info"><span className="payment-name">PayPal</span><span className="payment-link">paypal.me/FlorianLefel</span></div>
           <span className="payment-arrow">{copied === "paypal" ? "✓ Copié" : "📋"}</span>
         </button>
-        <button className="payment-card bitcoin" onClick={() => handleCopy("bc1qc0hget6a7wnfaylxyh78psrycm8e55gjlrxvgq", "btc")}>
+        <button className="payment-card virement" onClick={() => handleCopy("FR7640618804880004042967308", "vir")}>
+          <div className="payment-logo">🏦</div>
+          <div className="payment-info"><span className="payment-name">Virement bancaire</span><span className="payment-link">FR7640618804880004042967308</span></div>
+          <span className="payment-arrow">{copied === "vir" ? "✓ Copié" : "📋"}</span>
+        </button>
+        <button className="payment-card paysafe" onClick={() => handleCopy("estebans293000@gmail.com", "paysafe")}>
+          <div className="payment-logo">🎟️</div>
+          <div className="payment-info"><span className="payment-name">Paysafecard</span><span className="payment-link">estebans293000@gmail.com</span></div>
+          <span className="payment-arrow">{copied === "paysafe" ? "✓ Copié" : "📋"}</span>
+        </button>
+        <button className="payment-card bitcoin" onClick={() => handleCopy("bc1qx95g27p7p5dya2z80gam8fqar5l5jnmeglxh7q", "btc")}>
           <div className="payment-logo">₿</div>
-          <div className="payment-info"><span className="payment-name">Bitcoin</span><span className="payment-link">bc1qc0hget6a7wnfaylxyh78psrycm8e55gjlrxvgq</span></div>
+          <div className="payment-info"><span className="payment-name">Bitcoin (BTC)</span><span className="payment-link">bc1qx95g27p7p5dya2z80gam8fqar5l5jnmeglxh7q</span></div>
           <span className="payment-arrow">{copied === "btc" ? "✓ Copié" : "📋"}</span>
         </button>
-        <button className="payment-card ltc" onClick={() => handleCopy("LawXU3nBgDoDUUy5ijcKrgzWCT6qefgDp9", "ltc")}>
+        <button className="payment-card eth" onClick={() => handleCopy("0x4cDcA7d483f80525210DFcD2DA9d83EdF28CB965", "eth")}>
+          <div className="payment-logo">Ξ</div>
+          <div className="payment-info"><span className="payment-name">Ethereum (ETH)</span><span className="payment-link">0x4cDcA7d483f80525210DFcD2DA9d83EdF28CB965</span></div>
+          <span className="payment-arrow">{copied === "eth" ? "✓ Copié" : "📋"}</span>
+        </button>
+        <button className="payment-card sol" onClick={() => handleCopy("KPSXhuDkmgpifqFg5PB8rZu7JZn6tXYZkgZ3k3m7Zvo", "sol")}>
+          <div className="payment-logo">◎</div>
+          <div className="payment-info"><span className="payment-name">Solana (SOL)</span><span className="payment-link">KPSXhuDkmgpifqFg5PB8rZu7JZn6tXYZkgZ3k3m7Zvo</span></div>
+          <span className="payment-arrow">{copied === "sol" ? "✓ Copié" : "📋"}</span>
+        </button>
+        <button className="payment-card ltc" onClick={() => handleCopy("ltc1qrdnfp0tc6fzkp3pe27a0fevmrn0ez6q96z35y4", "ltc")}>
           <div className="payment-logo">Ł</div>
-          <div className="payment-info"><span className="payment-name">Litecoin</span><span className="payment-link">LawXU3nBgDoDUUy5ijcKrgzWCT6qefgDp9</span></div>
+          <div className="payment-info"><span className="payment-name">Litecoin (LTC)</span><span className="payment-link">ltc1qrdnfp0tc6fzkp3pe27a0fevmrn0ez6q96z35y4</span></div>
           <span className="payment-arrow">{copied === "ltc" ? "✓ Copié" : "📋"}</span>
         </button>
-        <button className="payment-card virement" onClick={() => handleCopy("FR76 2823 30000188 0778 9405 046", "vir")}>
-          <div className="payment-logo">🏦</div>
-          <div className="payment-info"><span className="payment-name">Virement bancaire</span><span className="payment-link">FR76 2823 30000188 0778 9405 046</span></div>
-          <span className="payment-arrow">{copied === "vir" ? "✓ Copié" : "📋"}</span>
+        <button className="payment-card usdt-trc" onClick={() => handleCopy("TABWa1GqhD4Wjqh8UzEuoaudxnuuxGFURh", "usdttrc")}>
+          <div className="payment-logo">₮</div>
+          <div className="payment-info"><span className="payment-name">USDT (TRC20)</span><span className="payment-link">TABWa1GqhD4Wjqh8UzEuoaudxnuuxGFURh</span></div>
+          <span className="payment-arrow">{copied === "usdttrc" ? "✓ Copié" : "📋"}</span>
+        </button>
+        <button className="payment-card usdt-eth" onClick={() => handleCopy("0x4cDcA7d483f80525210DFcD2DA9d83EdF28CB965", "usdteth")}>
+          <div className="payment-logo">₮</div>
+          <div className="payment-info"><span className="payment-name">USDT (ETH)</span><span className="payment-link">0x4cDcA7d483f80525210DFcD2DA9d83EdF28CB965</span></div>
+          <span className="payment-arrow">{copied === "usdteth" ? "✓ Copié" : "📋"}</span>
+        </button>
+        <button className="payment-card usdc-eth" onClick={() => handleCopy("0x4cDcA7d483f80525210DFcD2DA9d83EdF28CB965", "usdc")}>
+          <div className="payment-logo">$</div>
+          <div className="payment-info"><span className="payment-name">USDC (ETH)</span><span className="payment-link">0x4cDcA7d483f80525210DFcD2DA9d83EdF28CB965</span></div>
+          <span className="payment-arrow">{copied === "usdc" ? "✓ Copié" : "📋"}</span>
         </button>
       </div>
     </div>
