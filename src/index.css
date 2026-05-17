@@ -2244,7 +2244,9 @@ a { text-decoration: none; color: inherit; }
 }
 .admin-row td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(201,162,39,0.06); vertical-align: middle; }
 .admin-row:last-child td { border-bottom: none; }
-.admin-row:hover td { background: rgba(201,162,39,.04); }
+.admin-row:hover td { background: rgba(201,162,39,0.08); }
+.admin-row:hover td:first-child { border-radius: 8px 0 0 8px; }
+.admin-row:hover td:last-child  { border-radius: 0 8px 8px 0; }
 .admin-pseudo { font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
 
 .admin-tier-badge {
@@ -2272,6 +2274,17 @@ a { text-decoration: none; color: inherit; }
 
 .status-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: rgba(255,255,255,0.15); }
 .status-dot.online { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+
+.dv-online-dot {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: #4ade80;
+  border: 2px solid rgba(10,8,18,0.9);
+  box-shadow: 0 0 8px #4ade80;
+  z-index: 4;
+}
 
 .admin-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 

@@ -5,7 +5,7 @@ import CoinIcon from "./CoinIcon";
 
 export default function Cart() {
   const { items, remove, clear, total, open, setOpen } = useCart();
-  const { user, users, sendGroupMessage } = useAuth();
+  const { user, users, sendGroupMessage, createOrder } = useAuth();
   const [toast, setToast] = useState(null);
 
   const showToast = (msg) => {
@@ -67,9 +67,9 @@ export default function Cart() {
       date: new Date().toISOString(),
       treated: false,
       groupId, participantIds, participantPseudos,
+      groupName: `Commande – ${user.pseudo}`,
     };
-    const orders = JSON.parse(localStorage.getItem("mh_orders") || "[]");
-    localStorage.setItem("mh_orders", JSON.stringify([...orders, order]));
+    await createOrder(order);
 
     clear();
     showToast("✅ Commande envoyée ! Kraken a été notifié ⚡");

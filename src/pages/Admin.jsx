@@ -30,12 +30,6 @@ function ConfirmModal({ message, onConfirm, onCancel }) {
   );
 }
 
-function loadOrders() {
-  try { return JSON.parse(localStorage.getItem("mh_orders")) || []; } catch { return []; }
-}
-function saveOrders(orders) {
-  localStorage.setItem("mh_orders", JSON.stringify(orders));
-}
 
 const allWLItems = whitelist.flatMap(cat => cat.items);
 
@@ -94,7 +88,7 @@ function RoleAssignSection({ selectedPerms, setSelectedPerms, selectedAbo, setSe
 }
 
 export default function Admin() {
-  const { user, users, createUser, deleteUser, updateUser, sendMessage } = useAuth();
+  const { user, users, createUser, deleteUser, updateUser, sendMessage, sendGroupMessage, orders, treatOrder } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState("members");
   const [confirmPending, setConfirmPending] = useState(null);
@@ -140,11 +134,6 @@ export default function Admin() {
   const [editAvatarFile,  setEditAvatarFile]  = useState(null);
   const [editAvatarData,  setEditAvatarData]  = useState("");
 
-  const [orders, setOrders] = useState([]);
-
-  useEffect(() => {
-    setOrders(loadOrders());
-  }, [tab]);
 
   if (!user?.isAdmin) {
     navigate("/");
@@ -251,9 +240,7 @@ export default function Admin() {
   };
 
   const handleTreated = async (order) => {
-    const updatedOrders = orders.map(o => o.id === order.id ? { ...o, treated: true } : o);
-    saveOrders(updatedOrders);
-    setOrders(updatedOrders);
+    await treatOrder(order.id);
 
     const member = users.find(u => u.id === order.userId);
     if (!member) return;
@@ -293,6 +280,17 @@ export default function Admin() {
     ].filter(l => l !== null).join("\n");
 
     await sendMessage(member.id, confirmContent);
+
+    if (order.groupId) {
+      await sendGroupMessage({
+        groupId:           order.groupId,
+        participantIds:    order.participantIds    || [],
+        participantPseudos: order.participantPseudos || [],
+        content:           confirmContent,
+        groupName:         order.groupName || `Commande – ${order.pseudo}`,
+      });
+    }
+
     await updateUser(member.id, { perms: newPerms, abonnement: newAbonnement, whitelist: newWhitelist });
   };
 
@@ -360,7 +358,7 @@ export default function Admin() {
                   </td>
                   <td style={{ color: "#D9B45B" }}>{u.abonnement || "—"}</td>
                   <td>
-                    <span className={`status-dot ${u.id === user.id ? "online" : ""}`} />
+                    <span className={`status-dot ${u.last_seen && Date.now() - new Date(u.last_seen).getTime() < 3 * 60 * 1000 ? "online" : ""}`} />
                   </td>
                   <td className="admin-actions">
                     <button className="admin-action-btn edit" onClick={() => openEditModal(u)}>✏️ Modifier</button>

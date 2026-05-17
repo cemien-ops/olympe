@@ -268,6 +268,9 @@ function DivinCard({ m, tier, delay = 0, onSelect }) {
 
         {/* Full-card portrait image */}
         <div className="dv-portrait-bg">
+          {m && m.lastSeen && Date.now() - new Date(m.lastSeen).getTime() < 3 * 60 * 1000 && (
+            <span className="dv-online-dot" />
+          )}
           {m
             ? renderAvatar(m.avatar, "100%", false)
             : <motion.span className="dv-q"
@@ -385,7 +388,7 @@ function ProfileModal({ m, user, onClose }) {
             <div className="pm-section">
               <span className="pm-label">🤝 Parrainage</span>
               <div className="pm-tags">
-                <span className="pm-tag pm-tag-parrain">Parrainé par <strong>{m.parrain}</strong></span>
+                <span className="pm-tag pm-tag-parrain">Parrainé par <strong>{Array.isArray(m.parrain) ? m.parrain.join(", ") : m.parrain}</strong></span>
               </div>
             </div>
           )}

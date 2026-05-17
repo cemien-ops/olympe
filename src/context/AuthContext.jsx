@@ -21,6 +21,15 @@ const normalizeUser = (u) => {
   };
 };
 
+const normalizeOrder = (o) => ({
+  ...o,
+  userId:           o.user_id            ?? o.userId,
+  groupId:          o.group_id            ?? o.groupId            ?? null,
+  participantIds:   o.participant_ids     ?? o.participantIds     ?? [],
+  participantPseudos: o.participant_pseudos ?? o.participantPseudos ?? [],
+  groupName:        o.group_name          ?? o.groupName          ?? null,
+});
+
 const normalizeMsg = (m) => {
   if (!m) return null;
   return {
@@ -80,9 +89,10 @@ async function seedDefaults() {
 }
 
 export function AuthProvider({ children }) {
-  const [users, setUsers] = useState([]);
-  const [user,  setUser]  = useState(null);
-  const [msgs,  setMsgs]  = useState([]);
+  const [users,  setUsers]  = useState([]);
+  const [user,   setUser]   = useState(null);
+  const [msgs,   setMsgs]   = useState([]);
+  const [orders, setOrders] = useState([]);
 
   // ── Initial load ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -92,14 +102,16 @@ export function AuthProvider({ children }) {
     }
     (async () => {
       await seedDefaults();
-      const [{ data: ud }, { data: md }] = await Promise.all([
+      const [{ data: ud }, { data: md }, ordRes] = await Promise.all([
         supabase.from("users").select("*"),
         supabase.from("messages").select("*"),
+        supabase.from("orders").select("*").catch(() => ({ data: [] })),
       ]);
       const nu = (ud || []).map(normalizeUser);
       const nm = (md || []).map(normalizeMsg);
       setUsers(nu);
       setMsgs(nm);
+      setOrders((ordRes?.data || []).map(normalizeOrder));
       const sessionId = localStorage.getItem(SESSION_KEY);
       if (sessionId) {
         const u = nu.find(u => u.id === sessionId);
@@ -107,6 +119,15 @@ export function AuthProvider({ children }) {
       }
     })();
   }, []);
+
+  // ── Heartbeat last_seen ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user?.id || !supabase) return;
+    const beat = () => supabase.from("users").update({ last_seen: new Date().toISOString() }).eq("id", user.id);
+    beat();
+    const t = setInterval(beat, 60_000);
+    return () => clearInterval(t);
+  }, [user?.id]);
 
   // ── Realtime subscriptions ────────────────────────────────────────────────
   useEffect(() => {
@@ -134,6 +155,17 @@ export function AuthProvider({ children }) {
             setMsgs(prev => prev.map(m => m.id === n.id ? n : m));
           } else if (eventType === "DELETE") {
             setMsgs(prev => prev.filter(m => m.id !== oldRow.id));
+          }
+        })
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" },
+        ({ eventType, new: row, old: oldRow }) => {
+          if (eventType === "INSERT") {
+            setOrders(prev => [...prev, normalizeOrder(row)]);
+          } else if (eventType === "UPDATE") {
+            const n = normalizeOrder(row);
+            setOrders(prev => prev.map(o => o.id === n.id ? n : o));
+          } else if (eventType === "DELETE") {
+            setOrders(prev => prev.filter(o => o.id !== oldRow.id));
           }
         })
       .subscribe();
@@ -334,6 +366,28 @@ export function AuthProvider({ children }) {
     setMsgs(prev => prev.map(m => m.toId === user.id ? { ...m, read: true } : m));
   };
 
+  const createOrder = async (order) => {
+    if (!supabase) return;
+    await supabase.from("orders").insert({
+      id:                 String(order.id),
+      user_id:            order.userId,
+      pseudo:             order.pseudo,
+      items:              order.items,
+      total:              order.total,
+      date:               order.date,
+      treated:            false,
+      group_id:           order.groupId           || null,
+      participant_ids:    order.participantIds     || [],
+      participant_pseudos: order.participantPseudos || [],
+      group_name:         order.groupName          || null,
+    });
+  };
+
+  const treatOrder = async (orderId) => {
+    if (!supabase) return;
+    await supabase.from("orders").update({ treated: true }).eq("id", String(orderId));
+  };
+
   const markGroupRead = async (groupId) => {
     if (!supabase || !user) return;
     const unread = msgs.filter(m =>
@@ -371,13 +425,14 @@ export function AuthProvider({ children }) {
   const members = users.map(u => ({
     pseudo:     u.pseudo,
     avatar:     u.avatar,
-    customId:   u.customId  || null,
-    parrain:    u.parrain   || null,
-    faction:    u.faction   || "olympe",
+    customId:   u.customId   || null,
+    parrain:    u.parrain    || null,
+    faction:    u.faction    || "olympe",
     isAdmin:    !!u.isAdmin,
-    perms:      u.perms     || [],
+    perms:      u.perms      || [],
     abonnement: u.abonnement || null,
     whitelist:  u.whitelist  || [],
+    lastSeen:   u.last_seen  ?? null,
   }));
 
   const deleteProfile = async (pseudo) => {
@@ -397,6 +452,7 @@ export function AuthProvider({ children }) {
       login, logout, createUser, deleteUser, updateUser, changePassword,
       sendMessage, sendGroupMessage, createGroupConv, addUserToGroup,
       saveGroupNameDB, deleteConversationDB, markGroupRead,
+      orders, createOrder, treatOrder,
       getMessages, getUnreadCount, unreadCount, markRead, markAllRead, markEverythingRead,
       deleteProfile, updatePossessions,
     }}>
