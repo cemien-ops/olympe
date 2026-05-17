@@ -3063,27 +3063,25 @@ a { text-decoration: none; color: inherit; }
   .admin-action-btn { padding: 5px 10px; font-size: 0.75rem; }
   .admin-tier-badge { font-size: 0.68rem; padding: 2px 8px; }
 
-  /* ── Messages — liste complète / thread plein écran ── */
+  /* ── Messages mobile ── */
   .messages-page {
     flex-direction: column;
     height: calc(100vh - 56px);
     overflow: hidden;
   }
-  /* Contacts = liste défilante en bas */
-  .msg-contacts {
-    width: 100%; flex-shrink: 0;
-    max-height: clamp(150px, 28vh, 220px);
+  /* Sans conversation : contacts plein écran */
+  .messages-page:not(.has-conv) .msg-main { display: none; }
+  .messages-page:not(.has-conv) .msg-contacts {
+    width: 100%;
+    height: 100%;
+    max-height: none;
     border-left: none;
-    border-top: 1px solid rgba(201,162,39,0.15);
-    order: 2;
+    border-top: none;
+    flex: 1;
   }
-  .msg-main {
-    flex: 1; min-height: 0;
-    order: 1;
-  }
-  /* Quand une conv est ouverte : thread plein écran, contacts masqués */
+  /* Avec conversation : thread plein écran, contacts masqués */
   .messages-page.has-conv .msg-contacts { display: none; }
-  .messages-page.has-conv .msg-main { height: 100%; }
+  .messages-page.has-conv .msg-main { flex: 1; min-height: 0; }
 
   /* ── Discount / group panels ── */
   .discount-menu { right: 0; left: auto; }
@@ -3202,13 +3200,13 @@ a { text-decoration: none; color: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
 }
 .cs-fondateur-side {
   position: absolute;
-  right: 100%;
+  left: 1.5rem;
   top: 50%;
   transform: translateY(-50%);
-  padding-right: 2.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3242,7 +3240,6 @@ a { text-decoration: none; color: inherit; }
   .cs-fondateur-side {
     position: static;
     transform: none;
-    padding-right: 0;
   }
   .cs-row-g-container {
     flex-direction: column;

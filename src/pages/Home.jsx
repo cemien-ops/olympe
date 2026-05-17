@@ -64,7 +64,7 @@ export default function Home() {
               <Link to="/shop" className="btn-primary">Voir la boutique ⚡</Link>
             </motion.div>
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-              <Link to="/members" className="btn-ghost">Nos membres</Link>
+              <Link to="/members" className="btn-primary">Nos membres</Link>
             </motion.div>
           </motion.div>
         </motion.div>
