@@ -444,6 +444,7 @@ function CosmicMembers({ members, onSelect }) {
             initial={{ opacity: 0, y: -22 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
+            <div className="cs-header-ornament">✦ L'OLYMPE ✦</div>
             <h1 className="cs-title">L'Enceinte Olympienne</h1>
             <p className="cs-sub">Les divinités de l'Olympe</p>
           </motion.div>
@@ -492,6 +493,17 @@ export default function Members() {
   const [selected, setSelected] = useState(null);
   const [entered,  setEntered]  = useState(false);
   const handleEntered = useCallback(() => setEntered(true), []);
+
+  useEffect(() => {
+    const prevColor = document.body.style.backgroundColor;
+    const prevImage = document.body.style.backgroundImage;
+    document.body.style.backgroundColor = "#000";
+    document.body.style.backgroundImage = "none";
+    return () => {
+      document.body.style.backgroundColor = prevColor;
+      document.body.style.backgroundImage = prevImage;
+    };
+  }, []);
 
   return (
     <>

@@ -8,6 +8,7 @@ import Cart from "./components/Cart";
 import Particles from "./components/Particles";
 import IntroAnimation from "./components/IntroAnimation";
 import CursorTrail from "./components/CursorTrail";
+import BackgroundMusic from "./components/BackgroundMusic";
 import Home from "./pages/Home";
 import Shop from "./pages/Shop";
 import Members from "./pages/Members";
@@ -61,6 +62,7 @@ export default function App() {
         <AuthProvider>
           <CartProvider>
             <CursorTrail />
+            <BackgroundMusic />
             <Particles />
             <Navbar />
             <Cart />

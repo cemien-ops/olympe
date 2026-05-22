@@ -290,8 +290,8 @@ function AboCard({ item, ownedAboId, userAbonnement, userAboPrice, cartAbo, onDe
       <div className="rpg-divider" />
 
       <div className="rpg-price" style={{ fontSize: "1.4rem" }}>
-        {item.price.toFixed(2)}
-        <span style={{ fontSize: "0.82rem", color: "#C9A227", marginLeft: "3px" }}>€/mois</span>
+        {item.price.toFixed(2)} <CoinIcon size={15} />
+        <span style={{ fontSize: "0.82rem", color: "#C9A227", marginLeft: "3px" }}>/mois</span>
       </div>
 
       <div className="rpg-actions">

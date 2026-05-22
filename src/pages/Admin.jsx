@@ -88,7 +88,7 @@ function RoleAssignSection({ selectedPerms, setSelectedPerms, selectedAbo, setSe
 }
 
 export default function Admin() {
-  const { user, users, createUser, deleteUser, updateUser, sendMessage, sendGroupMessage, orders, treatOrder } = useAuth();
+  const { user, users, createUser, deleteUser, updateUser, sendMessage, sendGroupMessage, orders, treatOrder, deleteOrder } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState("members");
   const [confirmPending, setConfirmPending] = useState(null);
@@ -226,6 +226,13 @@ export default function Admin() {
     if (u.perms?.includes("Ambassadeur")) return "Ambassadeur";
     return "Membre";
   };
+
+  const MAX_DIPLOMATE    = 2;
+  const MAX_AMBASSADEUR  = 10;
+  const countDiplomate   = (users || []).filter(u => getUserTier(u) === "Diplomate").length;
+  const countAmbassadeur = (users || []).filter(u => getUserTier(u) === "Ambassadeur").length;
+  const diplomatesFull   = countDiplomate   >= MAX_DIPLOMATE;
+  const ambassadeursFull = countAmbassadeur >= MAX_AMBASSADEUR;
 
   const handleQuickTier = (u, newTier) => {
     const tierPerms = ["Gérant", "Diplomate", "Ambassadeur"];
@@ -377,8 +384,12 @@ export default function Admin() {
                             onChange={e => handleQuickTier(u, e.target.value)}
                           >
                             <option value="Membre">Membre</option>
-                            <option value="Ambassadeur">Ambassadeur</option>
-                            <option value="Diplomate">Diplomate</option>
+                            <option value="Ambassadeur" disabled={ambassadeursFull && getUserTier(u) !== "Ambassadeur"}>
+                              Ambassadeur{ambassadeursFull && getUserTier(u) !== "Ambassadeur" ? " (complet)" : ""}
+                            </option>
+                            <option value="Diplomate" disabled={diplomatesFull && getUserTier(u) !== "Diplomate"}>
+                              Diplomate{diplomatesFull && getUserTier(u) !== "Diplomate" ? " (complet)" : ""}
+                            </option>
                           </select>
                         )}
                         <button
@@ -395,7 +406,13 @@ export default function Admin() {
                         </button>
                       </>
                     )}
-                    {(u.id === "zeus-001" || u.id === "cronos-001" || u.pseudo === "Chaos") && <span style={{ color: "#7A6A50", fontSize: "0.8rem" }}>Protégé</span>}
+                    {(u.id === "zeus-001" || u.id === "cronos-001") && <span style={{ color: "#7A6A50", fontSize: "0.8rem" }}>Protégé</span>}
+                    {u.pseudo === "Chaos" && user?.id === "zeus-001" && (
+                      <button className="admin-action-btn toggle-admin" onClick={() => toggleAdmin(u)}>
+                        👑 {u.isAdmin ? "Retirer" : "Admin"}
+                      </button>
+                    )}
+                    {u.pseudo === "Chaos" && user?.id !== "zeus-001" && <span style={{ color: "#7A6A50", fontSize: "0.8rem" }}>Protégé</span>}
                   </td>
                 </tr>
               ); })}
@@ -420,18 +437,21 @@ export default function Admin() {
                   <label className="role-assign-title">🏛️ RANG</label>
                   <div className="tier-select-btns">
                     {[
-                      { key: "membre",      label: "Membre",      icon: "⚡" },
-                      { key: "ambassadeur", label: "Ambassadeur", icon: "🏛️" },
-                      { key: "diplomate",   label: "Diplomate",   icon: "⚔" },
+                      { key: "membre",      label: "Membre",      icon: "⚡",  full: false },
+                      { key: "ambassadeur", label: "Ambassadeur", icon: "🏛️", full: ambassadeursFull },
+                      { key: "diplomate",   label: "Diplomate",   icon: "⚔",  full: diplomatesFull  },
                     ].map(t => (
                       <button
                         key={t.key}
                         type="button"
-                        className={`tier-btn tier-btn-${t.key}${newTier === t.key ? " active" : ""}`}
-                        onClick={() => handleTierChange(t.key)}
+                        className={`tier-btn tier-btn-${t.key}${newTier === t.key ? " active" : ""}${t.full ? " tier-btn-full" : ""}`}
+                        onClick={() => !t.full && handleTierChange(t.key)}
+                        disabled={t.full}
+                        title={t.full ? `Quota atteint (max ${t.key === "diplomate" ? MAX_DIPLOMATE : MAX_AMBASSADEUR})` : undefined}
                       >
                         <span className="tier-btn-icon">{t.icon}</span>
                         <span>{t.label}</span>
+                        {t.full && <span style={{ fontSize: "0.62rem", display: "block", opacity: 0.6 }}>Complet</span>}
                       </button>
                     ))}
                   </div>
@@ -516,11 +536,16 @@ export default function Admin() {
                 </div>
                 <div className="order-footer">
                   <span className="order-total">Total : <strong>{order.total?.toFixed?.(2) ?? order.total} 🪙</strong></span>
-                  {!order.treated && (
-                    <button className="admin-btn admin-btn-treat" onClick={() => handleTreated(order)}>
-                      ✓ Traité
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    {!order.treated && (
+                      <button className="admin-btn admin-btn-treat" onClick={() => handleTreated(order)}>
+                        ✓ Traité
+                      </button>
+                    )}
+                    <button className="admin-btn admin-btn-delete" onClick={() => deleteOrder(order.id)}>
+                      Supprimer
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
             ))
