@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import CoinIcon from "../components/CoinIcon";
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
@@ -530,12 +531,12 @@ export default function Admin() {
                   {(order.items || []).map((item, i) => (
                     <div key={i} className="order-item">
                       <span>{item.name}</span>
-                      <span style={{ color: "#D9B45B" }}>{item.price} 🪙</span>
+                      <span style={{ color: "#D9B45B", display: "flex", alignItems: "center", gap: "3px" }}>{item.price} <CoinIcon size={13} /></span>
                     </div>
                   ))}
                 </div>
                 <div className="order-footer">
-                  <span className="order-total">Total : <strong>{order.total?.toFixed?.(2) ?? order.total} 🪙</strong></span>
+                  <span className="order-total" style={{ display: "flex", alignItems: "center", gap: "4px" }}>Total : <strong>{order.total?.toFixed?.(2) ?? order.total}</strong> <CoinIcon size={14} /></span>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     {!order.treated && (
                       <button className="admin-btn admin-btn-treat" onClick={() => handleTreated(order)}>
