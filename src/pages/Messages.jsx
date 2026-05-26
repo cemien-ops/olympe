@@ -17,10 +17,12 @@ function ConfirmModal({ message, onConfirm, onCancel }) {
   );
 }
 
+const AVATAR_FB = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23141428'/%3E%3Ccircle cx='50' cy='40' r='18' fill='%23404060'/%3E%3Cellipse cx='50' cy='82' rx='26' ry='20' fill='%23404060'/%3E%3C/svg%3E";
+
 function renderAvatar(avatar, size = "2.5rem") {
   if (!avatar) return <span>⚡</span>;
   if (typeof avatar === "string" && (avatar.startsWith("data:") || avatar.startsWith("http"))) {
-    return <img src={avatar} alt="" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover" }} />;
+    return <img src={avatar} alt="" onError={e => { e.target.onerror = null; e.target.src = AVATAR_FB; }} style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover" }} />;
   }
   return <span>{avatar}</span>;
 }
@@ -578,7 +580,7 @@ export default function Messages() {
                     <div key={u.id} className="new-conv-item" onClick={() => startConversation(u)}>
                       <div className="contact-avatar">
                         {typeof u.avatar === "string" && (u.avatar.startsWith("data:") || u.avatar.startsWith("http"))
-                          ? <img src={u.avatar} alt="" style={{ width: "38px", height: "38px", borderRadius: "50%", objectFit: "cover" }} />
+                          ? <img src={u.avatar} alt="" onError={e => { e.target.onerror = null; e.target.src = AVATAR_FB; }} style={{ width: "38px", height: "38px", borderRadius: "50%", objectFit: "cover" }} />
                           : <span style={{ fontSize: "1.3rem" }}>{u.avatar || "⚡"}</span>}
                       </div>
                       <div>
@@ -599,7 +601,7 @@ export default function Messages() {
                         <div key={u.id} className={`new-conv-item${selected ? " selected" : ""}`} onClick={() => toggleGroupUser(u)}>
                           <div className="contact-avatar">
                             {typeof u.avatar === "string" && (u.avatar.startsWith("data:") || u.avatar.startsWith("http"))
-                              ? <img src={u.avatar} alt="" style={{ width: "38px", height: "38px", borderRadius: "50%", objectFit: "cover" }} />
+                              ? <img src={u.avatar} alt="" onError={e => { e.target.onerror = null; e.target.src = AVATAR_FB; }} style={{ width: "38px", height: "38px", borderRadius: "50%", objectFit: "cover" }} />
                               : <span style={{ fontSize: "1.3rem" }}>{u.avatar || "⚡"}</span>}
                           </div>
                           <div style={{ flex: 1 }}>

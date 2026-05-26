@@ -22,10 +22,12 @@ function categorize(m) {
   return "membre";
 }
 
+const AVATAR_FB = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23141428'/%3E%3Ccircle cx='50' cy='40' r='18' fill='%23404060'/%3E%3Cellipse cx='50' cy='82' rx='26' ry='20' fill='%23404060'/%3E%3C/svg%3E";
+
 function renderAvatar(avatar, size = "3rem", circle = true) {
   if (!avatar) return <span style={{ fontSize: size, lineHeight: 1 }}>⚡</span>;
   if (typeof avatar === "string" && (avatar.startsWith("data:") || avatar.startsWith("http")))
-    return <img src={avatar} alt="" style={{ width: size, height: size, borderRadius: circle ? "50%" : 0, objectFit: "cover", display: "block" }} />;
+    return <img src={avatar} alt="" onError={e => { e.target.onerror = null; e.target.src = AVATAR_FB; }} style={{ width: size, height: size, borderRadius: circle ? "50%" : 0, objectFit: "cover", display: "block" }} />;
   return <span style={{ fontSize: size, lineHeight: 1 }}>{avatar}</span>;
 }
 
