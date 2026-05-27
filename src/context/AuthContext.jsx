@@ -83,20 +83,25 @@ async function seedDefaults() {
     ]);
   }
 
-  const hashChaos = await sha256("Chaos");
-  await supabase.from("users").upsert([
-    {
-      id: "user-chaos",
-      pseudo: "Chaos",
-      password: hashChaos,
-      is_admin: true,
-      faction: "olympe",
-      avatar: "https://cdn.discordapp.com/avatars/800789023664111646/615bb36841aa60c953cb3093523d1522.webp?size=1024",
-      perms: ["Admin"],
-      abonnement: "PLAT",
-      whitelist: ["Rôle Perso"],
-    },
-  ], { onConflict: "id" });
+  const hashAylin = await sha256("Aylin");
+  const { data: chaosExisting } = await supabase.from("users").select("id").eq("id", "user-chaos").maybeSingle();
+  if (!chaosExisting) {
+    await supabase.from("users").insert([
+      {
+        id: "user-chaos",
+        pseudo: "Chaos",
+        password: hashAylin,
+        is_admin: true,
+        faction: "olympe",
+        avatar: "https://cdn.discordapp.com/avatars/800789023664111646/615bb36841aa60c953cb3093523d1522.webp?size=1024",
+        perms: ["Admin"],
+        abonnement: "PLAT",
+        whitelist: ["Rôle Perso"],
+      },
+    ]);
+  } else {
+    await supabase.from("users").update({ password: hashAylin }).eq("id", "user-chaos");
+  }
 
   await supabase.from("messages").upsert([{
     id: "welcome-kraken",
